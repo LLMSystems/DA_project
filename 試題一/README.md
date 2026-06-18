@@ -8,8 +8,11 @@
   - Selenium 爬蟲
   - `aiosqlite` 寫入
   - CSV 匯出
+  - 驗證碼自動辨識（ddddocr + OpenCV，`--captcha auto`）
 - `tests/`
   - `pytest` 單元測試
+- `scripts/`
+  - 輸出檢查與驗證碼蒐集／標註／辨識評測工具
 - `規格文件.md`
   - 已確認的網站規格與技術選型
 
@@ -54,11 +57,12 @@ python .\main.py --areas 大安區
 - `--db-path data/doorplate.sqlite3`
 - `--csv-path data/doorplate_records.csv`
 - `--log-path logs/crawler.log`
+- `--captcha manual|auto`（驗證碼處理；預設 `manual`。`auto` 見下方「驗證碼自動辨識」）
 - `--headless`（headless 模式；驗證碼處理方式見下方說明）
 
 ## 驗證碼輸入方式
 
-本爬蟲採**人工輸入驗證碼**，依模式自動切換取得驗證碼的方式：
+預設採**人工輸入驗證碼**，依模式自動切換取得驗證碼的方式：
 
 - **有視窗模式（預設）**：直接看瀏覽器畫面上的圖形驗證碼，在終端機提示時輸入。
 - **headless 模式（`--headless`）**：沒有可見視窗，程式會把驗證碼元素**截圖存成 PNG 並以系統預設看圖程式自動開啟**（同時把路徑寫進 Log），你看圖後在終端機輸入即可。
@@ -67,7 +71,34 @@ python .\main.py --areas 大安區
 
 驗證碼輸入錯誤時會自動重新產製並再次提示，最多重試 5 次。
 
-> 進階：建構 `DoorplateScraper` 時可注入自訂 `captcha_provider`，即可改為自動辨識等其他方案。
+> 進階：建構 `DoorplateScraper` 時可注入自訂 `captcha_provider`，即可改為其他辨識方案。
+
+## 驗證碼自動辨識（`--captcha auto`）
+
+加上 `--captcha auto` 可改用 **ddddocr 自動辨識**驗證碼，無需人工：
+
+```powershell
+cd .\試題一
+python .\main.py --captcha auto --areas 大安區
+```
+
+- **相依**：需 `pip install ddddocr opencv-python`（已列入 `requirements.txt`；`manual` 模式可不裝）。
+  - Windows 上 ddddocr 依賴的 `onnxruntime` 需要**較新的 Microsoft Visual C++ Redistributable（x64）**，否則 `import onnxruntime` 會出現「DLL 初始化失敗」。請安裝[最新版 VC++ Redistributable](https://aka.ms/vs/17/release/vc_redist.x64.exe)。
+- **前處理**：取驗證碼圖後做**灰階 → Otsu 二值化**再丟給 ddddocr（實測對本站雜訊底圖提升最顯著）。
+- **5 碼閘門**：本站驗證碼固定 5 碼，辨識結果若非 5 碼視為不可信，**直接換一張重抽、不送出**（不浪費伺服器請求）。
+- **自動降級**：`auto` 先讓 OCR 嘗試數次（預設 6 次），仍失敗才**自動降級為人工輸入**（沿用上節的視窗／截圖方式），確保最終仍可完成。
+- **CPU 即可**：單張辨識約 10ms 級，不需要 GPU。
+
+### 辨識率（以 100 張人工標註樣本評測）
+
+| 方案 | 整串正確率 | 輸出 5 碼時正確率 |
+|------|-----------:|------------------:|
+| 原圖直接辨識 | 59% | — |
+| **灰階 + Otsu（採用）** | **71%** | **91%** |
+
+搭配「5 碼閘門 + 重試（每次換新驗證碼）」：單次成功率約 71%、彼此獨立，累積成功率 = 1 − (1 − 0.71)ⁿ，**重試 6 次即達約 99.9%**（`auto_captcha_attempts` 預設 6 即據此設定），用盡仍失敗才降級人工。
+
+> 評測與資料蒐集腳本見 [scripts/](scripts/)：`collect_captchas.py`（蒐集樣本）、`label_captchas.py`（產生標註頁）、`eval_captcha.py`（ddddocr 預測報告）、`eval_cv.py`（比較各種 CV 前處理）。這些腳本與其產物僅供評測，不影響主流程。
 
 ## 輸出
 
