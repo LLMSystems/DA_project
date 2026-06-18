@@ -65,6 +65,16 @@ class CrawlerConfig:
     register_kind: str = REGISTER_KIND_INITIAL
     headless: bool = False
     timeout_seconds: int = 20
+    # 驗證碼模式：manual=人工輸入；auto=ddddocr 自動辨識（失敗自動降級人工）。
+    captcha_mode: str = "manual"
+    # 本站驗證碼固定 5 碼，自動辨識輸出非此長度時視為不可信、換一張重抽。
+    captcha_length: int = 5
+    # auto 模式先讓 OCR 嘗試的次數，用盡仍失敗才降級人工。
+    # 每次都換一張新驗證碼、彼此獨立，單次成功率實測約 0.71，
+    # 累積成功率 = 1 - (1 - 0.71)^n：n=3→97.6%、n=5→99.8%、n=6→99.9%。
+    # 取 6 在「成功率」與「失敗時等待時間」間取平衡：到 6 次已 ~99.9%，
+    # 再往上邊際效益 <0.1%，不如直接降級人工。
+    auto_captcha_attempts: int = 6
     db_path: Path = field(default_factory=lambda: Path("data") / "doorplate.sqlite3")
     csv_path: Path = field(default_factory=lambda: Path("data") / "doorplate_records.csv")
     log_path: Path = field(default_factory=lambda: Path("logs") / "crawler.log")

@@ -15,6 +15,13 @@ from doorplate_scraper.utils import configure_logger
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="試題一：村里街路門牌異動查詢爬蟲")
     parser.add_argument("--headless", action="store_true", help="以 headless 模式啟動瀏覽器")
+    parser.add_argument(
+        "--captcha",
+        choices=["manual", "auto"],
+        default="manual",
+        help="驗證碼處理：manual=人工輸入（預設）；auto=ddddocr 自動辨識，失敗自動降級人工"
+        "（需 pip install ddddocr opencv-python）",
+    )
     parser.add_argument("--city", default="臺北市", help="查詢縣市名稱，例如 臺北市、台中市")
     parser.add_argument("--start-date", default="114/09/01", help="民國日期起，例如 114/09/01")
     parser.add_argument("--end-date", default="114/11/30", help="民國日期迄，例如 114/11/30")
@@ -37,6 +44,7 @@ async def run() -> int:
         start_date=RocDate.parse(args.start_date),
         end_date=RocDate.parse(args.end_date),
         register_kind=args.register_kind,
+        captcha_mode=args.captcha,
         db_path=Path(args.db_path),
         csv_path=Path(args.csv_path),
         log_path=Path(args.log_path),

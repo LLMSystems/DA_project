@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import logging
 import os
 import subprocess
@@ -48,16 +49,24 @@ class DoorplateScraper:
     ) -> None:
         self.config = config
         self.logger = logger
-        # 驗證碼來源優先序：
-        # 1) 外部注入的 provider（例如自動辨識）。
-        # 2) headless 模式：截圖存檔並開啟驗證碼圖，再由人工輸入。
-        # 3) 有視窗模式：直接看瀏覽器畫面、人工輸入。
+        # 人工輸入 provider：headless 截圖存檔開圖，有視窗則直接看畫面。
+        self._manual_provider: CaptchaProvider = (
+            self._prompt_captcha_with_image if config.headless else self._prompt_captcha
+        )
+        # 驗證碼模式：
+        # - custom：外部注入 provider（例如自訂辨識），完全交給它，不做降級。
+        # - auto  ：先用 ddddocr 自動辨識，連續失敗自動降級人工。
+        # - manual：人工輸入。
         if captcha_provider is not None:
+            self._captcha_mode = "custom"
             self.captcha_provider = captcha_provider
-        elif config.headless:
-            self.captcha_provider = self._prompt_captcha_with_image
+        elif config.captcha_mode == "auto":
+            self._captcha_mode = "auto"
+            self.captcha_provider = self._manual_provider  # 降級時使用
         else:
-            self.captcha_provider = self._prompt_captcha
+            self._captcha_mode = "manual"
+            self.captcha_provider = self._manual_provider
+        self._ocr = None  # ddddocr 實例，auto 模式首次使用時才載入
         self.driver: WebDriver | None = None
         self.wait: WebDriverWait | None = None
         self._last_captcha_signature: str | None = None
@@ -148,12 +157,39 @@ class DoorplateScraper:
             register_kind=register_kind,
         )
 
-        for attempt in range(1, max_captcha_attempts + 1):
+        # auto 模式：先給 OCR 一定次數嘗試，用盡仍失敗才降級人工。
+        auto_budget = self.config.auto_captcha_attempts if self._captcha_mode == "auto" else 0
+        total_attempts = auto_budget + max_captcha_attempts
+
+        for attempt in range(1, total_attempts + 1):
+            use_ocr = self._captcha_mode == "auto" and attempt <= auto_budget
+            if self._captcha_mode == "auto" and attempt == auto_budget + 1:
+                self.logger.warning(
+                    "OCR 連續 %s 次未過，%s 降級為人工輸入驗證碼", auto_budget, area_name
+                )
+
             previous_signature = None if attempt == 1 else self._last_captcha_signature
             captcha_signature = self._wait_for_captcha_ready(previous_signature=previous_signature)
             self._last_captcha_signature = captcha_signature
             captcha_input = driver.find_element(By.ID, "captchaInput_captchaKey")
-            captcha_text = self.captcha_provider(driver, area_name, attempt)
+
+            provider = self._ocr_captcha if use_ocr else self.captcha_provider
+            captcha_text = provider(driver, area_name, attempt)
+
+            # 5 碼閘門（僅對 OCR）：輸出非預期長度視為不可信，
+            # 直接點「產製新驗證碼」換一張重抽，不送出、不浪費伺服器請求。
+            if use_ocr and len(captcha_text) != self.config.captcha_length:
+                self.logger.info(
+                    "OCR 結果 %r 非 %s 碼，%s 換新驗證碼重試",
+                    captcha_text,
+                    self.config.captcha_length,
+                    area_name,
+                )
+                self._last_captcha_signature = self._refresh_captcha(
+                    previous_signature=captcha_signature
+                )
+                continue
+
             if self._current_captcha_signature() != captcha_signature:
                 self.logger.warning(
                     "Captcha changed before submit for %s. Prompting again.",
@@ -369,6 +405,72 @@ class DoorplateScraper:
             """
         )
         return str(payload or "")
+
+    def _refresh_captcha(self, *, previous_signature: str | None) -> str:
+        """點「產製新驗證碼」換一張，回傳新的 signature（確認確實換新）。"""
+        driver = self._required_driver()
+        driver.execute_script(
+            """
+            const els = document.querySelectorAll('button, a, input[type="button"]');
+            for (const el of els) {
+              const text = (el.innerText || el.value || '').trim();
+              if (text.includes('產製新驗證碼')) { el.click(); return; }
+            }
+            const img = document.querySelector('#captchaImage_captchaKey');
+            if (img) { img.click(); }
+            """
+        )
+        return self._wait_for_captcha_ready(previous_signature=previous_signature)
+
+    def _grab_captcha_png(self) -> bytes:
+        """以原始解析度取得驗證碼圖的 PNG bytes（canvas 抽圖，避免版面截圖被裁切）。"""
+        driver = self._required_driver()
+        data_b64 = driver.execute_script(
+            """
+            const img = document.querySelector('#captchaImage_captchaKey');
+            if (!img) { return null; }
+            const src = img.getAttribute('src') || '';
+            if (src.startsWith('data:')) { return src.split(',')[1]; }
+            const canvas = document.createElement('canvas');
+            canvas.width = img.naturalWidth;
+            canvas.height = img.naturalHeight;
+            canvas.getContext('2d').drawImage(img, 0, 0);
+            return canvas.toDataURL('image/png').split(',')[1];
+            """
+        )
+        if not data_b64:
+            raise CrawlerError("無法取得驗證碼圖片內容")
+        return base64.b64decode(data_b64)
+
+    @staticmethod
+    def _otsu_png(png_bytes: bytes) -> bytes:
+        """灰階 + Otsu 二值化（實測對本站驗證碼辨識率提升最顯著的前處理）。"""
+        import cv2  # 延後載入：僅 auto 模式需要 opencv
+        import numpy as np
+
+        gray = cv2.imdecode(np.frombuffer(png_bytes, np.uint8), cv2.IMREAD_GRAYSCALE)
+        _, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        ok, buf = cv2.imencode(".png", binary)
+        if not ok:
+            raise CrawlerError("Otsu 前處理後 PNG 編碼失敗")
+        return buf.tobytes()
+
+    def _ocr_captcha(self, driver: WebDriver, area_name: str, attempt: int) -> str:
+        """auto 模式 provider：取圖 → Otsu 前處理 → ddddocr 辨識，回傳大寫結果。"""
+        _ = driver
+        if self._ocr is None:
+            try:
+                import ddddocr  # 延後載入：僅 auto 模式需要
+            except ImportError as exc:
+                raise CrawlerError(
+                    "auto 模式需安裝 ddddocr 與 opencv-python：pip install ddddocr opencv-python"
+                ) from exc
+            self._ocr = ddddocr.DdddOcr(show_ad=False)
+        png = self._grab_captcha_png()
+        processed = self._otsu_png(png)
+        text = (self._ocr.classification(processed) or "").strip().upper()
+        self.logger.info("OCR[%s] 第 %s 次辨識結果：%r", area_name, attempt, text)
+        return text
 
     def _collect_paginated_records(
         self,

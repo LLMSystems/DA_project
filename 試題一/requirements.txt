@@ -1,8 +1,12 @@
-selenium 
-aiosqlite 
-fastapi 
-uvicorn 
+selenium
+aiosqlite
+fastapi
+uvicorn
 pandas
 pytest-asyncio
 pytest
 requests
+
+# 驗證碼自動辨識（--captcha auto 才需要；manual 模式可不裝）
+ddddocr
+opencv-python
