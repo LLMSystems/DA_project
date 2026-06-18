@@ -1,0 +1,15 @@
+# Python 快取
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# 預設執行產物（審閱者本機執行時會重新產生）
+data/doorplate.sqlite3
+data/doorplate_records.csv
+logs/crawler.log
+temp
+
+# 驗證碼截圖暫存（headless 模式產生）
+logs/captcha/
+
+# 保留 data/verify/ 與 logs/verify/ 作為示範與驗證證據

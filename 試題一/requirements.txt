@@ -1,0 +1,8 @@
+selenium 
+aiosqlite 
+fastapi 
+uvicorn 
+pandas
+pytest-asyncio
+pytest
+requests
