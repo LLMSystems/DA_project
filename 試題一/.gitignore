@@ -12,4 +12,12 @@ temp
 # 驗證碼截圖暫存（headless 模式產生）
 logs/captcha/
 
+# 驗證碼樣本蒐集（測試辨識用，不進版控）
+data/captcha_samples/
+data/captcha_samples2/
+
+# auto 模式臨時測試產物
+data/auto_test.*
+logs/auto_test.log
+
 # 保留 data/verify/ 與 logs/verify/ 作為示範與驗證證據
