@@ -3,6 +3,9 @@ __pycache__/
 *.py[codz]
 *$py.class
 
+試題一\logs
+試題一\data
+
 # C extensions
 *.so
 
@@ -216,3 +219,9 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# 題目原始檔／個人題目整理：公開 repo 不得外流
+interview_assignment.pdf
+作業整理.md
+temp/
+試題一/temp/
