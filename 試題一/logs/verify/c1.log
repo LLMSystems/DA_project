@@ -1,0 +1,55 @@
+2026-06-18 16:25:48,190 | INFO | doorplate_scraper | Opened main page: https://www.ris.gov.tw/info-doorplate/app/doorplate/main
+2026-06-18 16:25:50,438 | INFO | doorplate_scraper | Entered query page for city 臺北市
+2026-06-18 16:25:50,601 | INFO | doorplate_scraper | Start crawling 大安區
+2026-06-18 16:26:10,953 | INFO | doorplate_scraper | Query succeeded for 大安區 with 130 records
+2026-06-18 16:26:10,982 | INFO | doorplate_scraper | Collecting page 1: rows=50
+2026-06-18 16:26:11,137 | INFO | doorplate_scraper | DataTable page info: page=1 pages=3 length=50 total=130
+2026-06-18 16:26:11,657 | INFO | doorplate_scraper | Collecting page 2: rows=50
+2026-06-18 16:26:11,742 | INFO | doorplate_scraper | DataTable page info: page=2 pages=3 length=50 total=130
+2026-06-18 16:26:12,262 | INFO | doorplate_scraper | Collecting page 3: rows=30
+2026-06-18 16:26:12,313 | INFO | doorplate_scraper | DataTable page info: page=3 pages=3 length=50 total=130
+2026-06-18 16:26:12,313 | INFO | doorplate_scraper | Finished 大安區 with 130 records
+2026-06-18 16:26:12,319 | INFO | doorplate_scraper | Persisted 大安區: records=130 inserted=130
+2026-06-18 16:26:14,747 | INFO | doorplate_scraper | Crawl complete. areas=1 failed=0 total_records=130 inserted=130 csv=data\verify\c1.csv db=data\verify\c1.sqlite3
+2026-06-18 16:27:02,298 | INFO | doorplate_scraper | Opened main page: https://www.ris.gov.tw/info-doorplate/app/doorplate/main
+2026-06-18 16:27:03,075 | INFO | doorplate_scraper | Entered query page for city 臺北市
+2026-06-18 16:27:03,235 | INFO | doorplate_scraper | Start crawling 大安區
+2026-06-18 16:27:12,971 | INFO | doorplate_scraper | Query succeeded for 大安區 with 130 records
+2026-06-18 16:27:12,989 | INFO | doorplate_scraper | Collecting page 1: rows=50
+2026-06-18 16:27:13,079 | INFO | doorplate_scraper | DataTable page info: page=1 pages=3 length=50 total=130
+2026-06-18 16:27:13,600 | INFO | doorplate_scraper | Collecting page 2: rows=50
+2026-06-18 16:27:13,753 | INFO | doorplate_scraper | DataTable page info: page=2 pages=3 length=50 total=130
+2026-06-18 16:27:15,333 | INFO | doorplate_scraper | Collecting page 3: rows=30
+2026-06-18 16:27:15,394 | INFO | doorplate_scraper | DataTable page info: page=3 pages=3 length=50 total=130
+2026-06-18 16:27:15,394 | INFO | doorplate_scraper | Finished 大安區 with 130 records
+2026-06-18 16:27:15,400 | INFO | doorplate_scraper | Persisted 大安區: records=130 inserted=0
+2026-06-18 16:27:17,849 | INFO | doorplate_scraper | Crawl complete. areas=1 failed=0 total_records=130 inserted=0 csv=data\verify\c1.csv db=data\verify\c1.sqlite3
+2026-06-18 16:28:50,278 | INFO | doorplate_scraper | Opened main page: https://www.ris.gov.tw/info-doorplate/app/doorplate/main
+2026-06-18 16:28:51,697 | INFO | doorplate_scraper | Entered query page for city 臺北市
+2026-06-18 16:28:51,861 | INFO | doorplate_scraper | Start crawling 大安區
+2026-06-18 16:29:05,931 | INFO | doorplate_scraper | Query succeeded for 大安區 with 130 records
+2026-06-18 16:29:05,950 | INFO | doorplate_scraper | Collecting page 1: rows=50
+2026-06-18 16:29:06,048 | INFO | doorplate_scraper | DataTable page info: page=1 pages=3 length=50 total=130
+2026-06-18 16:29:06,573 | INFO | doorplate_scraper | Collecting page 2: rows=50
+2026-06-18 16:29:06,671 | INFO | doorplate_scraper | DataTable page info: page=2 pages=3 length=50 total=130
+2026-06-18 16:29:07,190 | INFO | doorplate_scraper | Collecting page 3: rows=30
+2026-06-18 16:29:07,242 | INFO | doorplate_scraper | DataTable page info: page=3 pages=3 length=50 total=130
+2026-06-18 16:29:07,242 | INFO | doorplate_scraper | Finished 大安區 with 130 records
+2026-06-18 16:29:07,247 | INFO | doorplate_scraper | Persisted 大安區: records=130 inserted=0
+2026-06-18 16:29:09,684 | INFO | doorplate_scraper | Crawl complete. areas=1 failed=0 total_records=130 inserted=0 csv=data\verify\c1.csv db=data\verify\c1.sqlite3
+2026-06-18 16:30:19,974 | INFO | doorplate_scraper | Opened main page: https://www.ris.gov.tw/info-doorplate/app/doorplate/main
+2026-06-18 16:30:20,966 | INFO | doorplate_scraper | Entered query page for city 臺北市
+2026-06-18 16:30:21,106 | INFO | doorplate_scraper | Start crawling 大安區
+2026-06-18 16:30:39,049 | INFO | doorplate_scraper | Opened main page: https://www.ris.gov.tw/info-doorplate/app/doorplate/main
+2026-06-18 16:30:39,709 | INFO | doorplate_scraper | Entered query page for city 臺北市
+2026-06-18 16:30:39,845 | INFO | doorplate_scraper | Start crawling 大安區
+2026-06-18 16:30:48,976 | INFO | doorplate_scraper | Query succeeded for 大安區 with 130 records
+2026-06-18 16:30:48,992 | INFO | doorplate_scraper | Collecting page 1: rows=50
+2026-06-18 16:30:49,080 | INFO | doorplate_scraper | DataTable page info: page=1 pages=3 length=50 total=130
+2026-06-18 16:30:49,602 | INFO | doorplate_scraper | Collecting page 2: rows=50
+2026-06-18 16:30:49,777 | INFO | doorplate_scraper | DataTable page info: page=2 pages=3 length=50 total=130
+2026-06-18 16:30:50,299 | INFO | doorplate_scraper | Collecting page 3: rows=30
+2026-06-18 16:30:50,367 | INFO | doorplate_scraper | DataTable page info: page=3 pages=3 length=50 total=130
+2026-06-18 16:30:50,367 | INFO | doorplate_scraper | Finished 大安區 with 130 records
+2026-06-18 16:30:50,371 | INFO | doorplate_scraper | Persisted 大安區: records=130 inserted=0
+2026-06-18 16:30:52,851 | INFO | doorplate_scraper | Crawl complete. areas=1 failed=0 total_records=130 inserted=0 csv=data\verify\c1.csv db=data\verify\c1.sqlite3

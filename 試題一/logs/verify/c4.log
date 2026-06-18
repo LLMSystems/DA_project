@@ -1,0 +1,14 @@
+2026-06-18 16:31:41,226 | INFO | doorplate_scraper | Opened main page: https://www.ris.gov.tw/info-doorplate/app/doorplate/main
+2026-06-18 16:31:41,894 | INFO | doorplate_scraper | Entered query page for city 臺中市
+2026-06-18 16:31:42,136 | INFO | doorplate_scraper | Start crawling 西屯區
+2026-06-18 16:31:54,271 | INFO | doorplate_scraper | Opened main page: https://www.ris.gov.tw/info-doorplate/app/doorplate/main
+2026-06-18 16:31:55,037 | INFO | doorplate_scraper | Entered query page for city 臺中市
+2026-06-18 16:31:55,288 | INFO | doorplate_scraper | Start crawling 西屯區
+2026-06-18 16:32:03,827 | INFO | doorplate_scraper | Query succeeded for 西屯區 with 64 records
+2026-06-18 16:32:03,844 | INFO | doorplate_scraper | Collecting page 1: rows=50
+2026-06-18 16:32:03,958 | INFO | doorplate_scraper | DataTable page info: page=1 pages=2 length=50 total=64
+2026-06-18 16:32:04,480 | INFO | doorplate_scraper | Collecting page 2: rows=14
+2026-06-18 16:32:04,505 | INFO | doorplate_scraper | DataTable page info: page=2 pages=2 length=50 total=64
+2026-06-18 16:32:04,505 | INFO | doorplate_scraper | Finished 西屯區 with 64 records
+2026-06-18 16:32:04,509 | INFO | doorplate_scraper | Persisted 西屯區: records=64 inserted=64
+2026-06-18 16:32:06,930 | INFO | doorplate_scraper | Crawl complete. areas=1 failed=0 total_records=64 inserted=64 csv=data\verify\c4.csv db=data\verify\c4.sqlite3

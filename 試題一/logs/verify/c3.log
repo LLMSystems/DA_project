@@ -1,0 +1,20 @@
+2026-06-18 16:34:14,466 | INFO | doorplate_scraper | Opened main page: https://www.ris.gov.tw/info-doorplate/app/doorplate/main
+2026-06-18 16:34:15,323 | INFO | doorplate_scraper | Entered query page for city 新北市
+2026-06-18 16:34:15,726 | INFO | doorplate_scraper | Start crawling 板橋區
+2026-06-18 16:34:25,093 | WARNING | doorplate_scraper | Captcha validation failed for 板橋區, retrying
+2026-06-18 16:34:34,514 | INFO | doorplate_scraper | Query succeeded for 板橋區 with 280 records
+2026-06-18 16:34:34,544 | INFO | doorplate_scraper | Collecting page 1: rows=50
+2026-06-18 16:34:34,655 | INFO | doorplate_scraper | DataTable page info: page=1 pages=6 length=50 total=280
+2026-06-18 16:34:35,174 | INFO | doorplate_scraper | Collecting page 2: rows=50
+2026-06-18 16:34:35,265 | INFO | doorplate_scraper | DataTable page info: page=2 pages=6 length=50 total=280
+2026-06-18 16:34:35,786 | INFO | doorplate_scraper | Collecting page 3: rows=50
+2026-06-18 16:34:35,897 | INFO | doorplate_scraper | DataTable page info: page=3 pages=6 length=50 total=280
+2026-06-18 16:34:36,418 | INFO | doorplate_scraper | Collecting page 4: rows=50
+2026-06-18 16:34:36,600 | INFO | doorplate_scraper | DataTable page info: page=4 pages=6 length=50 total=280
+2026-06-18 16:34:37,126 | INFO | doorplate_scraper | Collecting page 5: rows=50
+2026-06-18 16:34:37,220 | INFO | doorplate_scraper | DataTable page info: page=5 pages=6 length=50 total=280
+2026-06-18 16:34:37,741 | INFO | doorplate_scraper | Collecting page 6: rows=30
+2026-06-18 16:34:37,830 | INFO | doorplate_scraper | DataTable page info: page=6 pages=6 length=50 total=280
+2026-06-18 16:34:37,830 | INFO | doorplate_scraper | Finished 板橋區 with 280 records
+2026-06-18 16:34:37,838 | INFO | doorplate_scraper | Persisted 板橋區: records=280 inserted=280
+2026-06-18 16:34:40,289 | INFO | doorplate_scraper | Crawl complete. areas=1 failed=0 total_records=280 inserted=280 csv=data\verify\c3.csv db=data\verify\c3.sqlite3

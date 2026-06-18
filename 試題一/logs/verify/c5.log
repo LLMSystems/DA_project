@@ -1,0 +1,45 @@
+2026-06-18 16:32:26,520 | INFO | doorplate_scraper | Opened main page: https://www.ris.gov.tw/info-doorplate/app/doorplate/main
+2026-06-18 16:32:27,659 | INFO | doorplate_scraper | Entered query page for city 高雄市
+2026-06-18 16:32:28,109 | INFO | doorplate_scraper | Start crawling 苓雅區
+2026-06-18 16:32:42,519 | INFO | doorplate_scraper | Query succeeded for 苓雅區 with 936 records
+2026-06-18 16:32:42,536 | INFO | doorplate_scraper | Collecting page 1: rows=50
+2026-06-18 16:32:42,674 | INFO | doorplate_scraper | DataTable page info: page=1 pages=19 length=50 total=936
+2026-06-18 16:32:43,194 | INFO | doorplate_scraper | Collecting page 2: rows=50
+2026-06-18 16:32:43,305 | INFO | doorplate_scraper | DataTable page info: page=2 pages=19 length=50 total=936
+2026-06-18 16:32:43,830 | INFO | doorplate_scraper | Collecting page 3: rows=50
+2026-06-18 16:32:43,973 | INFO | doorplate_scraper | DataTable page info: page=3 pages=19 length=50 total=936
+2026-06-18 16:32:44,494 | INFO | doorplate_scraper | Collecting page 4: rows=50
+2026-06-18 16:32:44,581 | INFO | doorplate_scraper | DataTable page info: page=4 pages=19 length=50 total=936
+2026-06-18 16:32:45,104 | INFO | doorplate_scraper | Collecting page 5: rows=50
+2026-06-18 16:32:45,232 | INFO | doorplate_scraper | DataTable page info: page=5 pages=19 length=50 total=936
+2026-06-18 16:32:46,267 | INFO | doorplate_scraper | Collecting page 6: rows=50
+2026-06-18 16:32:46,437 | INFO | doorplate_scraper | DataTable page info: page=6 pages=19 length=50 total=936
+2026-06-18 16:32:46,962 | INFO | doorplate_scraper | Collecting page 7: rows=50
+2026-06-18 16:32:47,045 | INFO | doorplate_scraper | DataTable page info: page=7 pages=19 length=50 total=936
+2026-06-18 16:32:48,585 | INFO | doorplate_scraper | Collecting page 8: rows=50
+2026-06-18 16:32:48,682 | INFO | doorplate_scraper | DataTable page info: page=8 pages=19 length=50 total=936
+2026-06-18 16:32:49,201 | INFO | doorplate_scraper | Collecting page 9: rows=50
+2026-06-18 16:32:49,283 | INFO | doorplate_scraper | DataTable page info: page=9 pages=19 length=50 total=936
+2026-06-18 16:32:49,801 | INFO | doorplate_scraper | Collecting page 10: rows=50
+2026-06-18 16:32:49,895 | INFO | doorplate_scraper | DataTable page info: page=10 pages=19 length=50 total=936
+2026-06-18 16:32:50,919 | INFO | doorplate_scraper | Collecting page 11: rows=50
+2026-06-18 16:32:51,004 | INFO | doorplate_scraper | DataTable page info: page=11 pages=19 length=50 total=936
+2026-06-18 16:32:51,522 | INFO | doorplate_scraper | Collecting page 12: rows=50
+2026-06-18 16:32:51,612 | INFO | doorplate_scraper | DataTable page info: page=12 pages=19 length=50 total=936
+2026-06-18 16:32:52,132 | INFO | doorplate_scraper | Collecting page 13: rows=50
+2026-06-18 16:32:52,230 | INFO | doorplate_scraper | DataTable page info: page=13 pages=19 length=50 total=936
+2026-06-18 16:32:53,762 | INFO | doorplate_scraper | Collecting page 14: rows=50
+2026-06-18 16:32:53,847 | INFO | doorplate_scraper | DataTable page info: page=14 pages=19 length=50 total=936
+2026-06-18 16:32:55,382 | INFO | doorplate_scraper | Collecting page 15: rows=50
+2026-06-18 16:32:55,466 | INFO | doorplate_scraper | DataTable page info: page=15 pages=19 length=50 total=936
+2026-06-18 16:32:55,984 | INFO | doorplate_scraper | Collecting page 16: rows=50
+2026-06-18 16:32:56,073 | INFO | doorplate_scraper | DataTable page info: page=16 pages=19 length=50 total=936
+2026-06-18 16:32:56,592 | INFO | doorplate_scraper | Collecting page 17: rows=50
+2026-06-18 16:32:56,676 | INFO | doorplate_scraper | DataTable page info: page=17 pages=19 length=50 total=936
+2026-06-18 16:32:57,195 | INFO | doorplate_scraper | Collecting page 18: rows=50
+2026-06-18 16:32:57,294 | INFO | doorplate_scraper | DataTable page info: page=18 pages=19 length=50 total=936
+2026-06-18 16:32:57,813 | INFO | doorplate_scraper | Collecting page 19: rows=36
+2026-06-18 16:32:57,877 | INFO | doorplate_scraper | DataTable page info: page=19 pages=19 length=50 total=936
+2026-06-18 16:32:57,877 | INFO | doorplate_scraper | Finished 苓雅區 with 936 records
+2026-06-18 16:32:57,890 | INFO | doorplate_scraper | Persisted 苓雅區: records=936 inserted=936
+2026-06-18 16:33:00,333 | INFO | doorplate_scraper | Crawl complete. areas=1 failed=0 total_records=936 inserted=936 csv=data\verify\c5.csv db=data\verify\c5.sqlite3

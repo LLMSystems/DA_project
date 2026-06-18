@@ -1,0 +1,17 @@
+2026-06-18 16:31:07,014 | INFO | doorplate_scraper | Opened main page: https://www.ris.gov.tw/info-doorplate/app/doorplate/main
+2026-06-18 16:31:08,110 | INFO | doorplate_scraper | Entered query page for city 臺北市
+2026-06-18 16:31:08,317 | INFO | doorplate_scraper | Start crawling 中正區
+2026-06-18 16:31:20,334 | INFO | doorplate_scraper | Query succeeded for 中正區 with 232 records
+2026-06-18 16:31:20,360 | INFO | doorplate_scraper | Collecting page 1: rows=50
+2026-06-18 16:31:20,496 | INFO | doorplate_scraper | DataTable page info: page=1 pages=5 length=50 total=232
+2026-06-18 16:31:21,020 | INFO | doorplate_scraper | Collecting page 2: rows=50
+2026-06-18 16:31:21,111 | INFO | doorplate_scraper | DataTable page info: page=2 pages=5 length=50 total=232
+2026-06-18 16:31:21,631 | INFO | doorplate_scraper | Collecting page 3: rows=50
+2026-06-18 16:31:21,722 | INFO | doorplate_scraper | DataTable page info: page=3 pages=5 length=50 total=232
+2026-06-18 16:31:22,241 | INFO | doorplate_scraper | Collecting page 4: rows=50
+2026-06-18 16:31:22,414 | INFO | doorplate_scraper | DataTable page info: page=4 pages=5 length=50 total=232
+2026-06-18 16:31:24,464 | INFO | doorplate_scraper | Collecting page 5: rows=32
+2026-06-18 16:31:24,541 | INFO | doorplate_scraper | DataTable page info: page=5 pages=5 length=50 total=232
+2026-06-18 16:31:24,541 | INFO | doorplate_scraper | Finished 中正區 with 232 records
+2026-06-18 16:31:24,547 | INFO | doorplate_scraper | Persisted 中正區: records=232 inserted=232
+2026-06-18 16:31:27,019 | INFO | doorplate_scraper | Crawl complete. areas=1 failed=0 total_records=232 inserted=232 csv=data\verify\c2.csv db=data\verify\c2.sqlite3
