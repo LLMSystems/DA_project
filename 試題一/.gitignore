@@ -16,6 +16,7 @@ logs/captcha/
 data/captcha_samples/
 data/captcha_samples2/
 data/captcha_holdout_100/
+data/captcha_holdout_extra_100/
 
 # auto 模式臨時測試產物
 data/auto_test.*
