@@ -1,0 +1,43 @@
+# Promtail：tail 共用 logs volume，推送到 Loki。
+# 兩組來源：爬蟲（純文字 "時間 | LEVEL | logger | 訊息"）與 API（JSON 每行一筆）。
+server:
+  http_listen_port: 9080
+  log_level: warn
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  # 試題一 爬蟲 log：解析 levelname 當 label，方便依等級查詢與告警。
+  - job_name: crawler
+    static_configs:
+      - targets: [localhost]
+        labels:
+          job: crawler
+          __path__: /logs/crawler/*.log
+    pipeline_stages:
+      - regex:
+          expression: '^(?P<time>\S+ \S+) \| (?P<level>\w+) \| (?P<logger>\S+) \| (?P<message>.*)$'
+      - labels:
+          level:
+
+  # 試題二 API log：JSON 行，抽出 level / kind / event 當 label。
+  - job_name: api
+    static_configs:
+      - targets: [localhost]
+        labels:
+          job: api
+          __path__: /logs/api/*.log
+    pipeline_stages:
+      - json:
+          expressions:
+            level: level
+            kind: kind
+            event: event
+      - labels:
+          level:
+          kind:
+          event:

@@ -1,0 +1,10 @@
+apiVersion: 1
+
+# 通知路由：所有告警都送到 webhook-sink。
+policies:
+  - orgId: 1
+    receiver: webhook-sink
+    group_by: ["alertname"]
+    group_wait: 10s
+    group_interval: 30s
+    repeat_interval: 1h

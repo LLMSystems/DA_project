@@ -1,0 +1,88 @@
+apiVersion: 1
+
+# 平台偵測為主：Grafana 以 LogQL 計數 Loki 中的異常事件，超過門檻即觸發 → webhook-sink。
+groups:
+  - orgId: 1
+    name: doorplate-alerts
+    folder: Doorplate
+    interval: 1m
+    rules:
+      # 試題一：爬蟲過程出現 ERROR。
+      - uid: crawler-error
+        title: 爬蟲異常（crawler ERROR）
+        condition: B
+        for: 0s
+        noDataState: OK
+        execErrState: Error
+        labels:
+          severity: critical
+        annotations:
+          summary: "試題一爬蟲在近 5 分鐘內出現 ERROR log"
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: loki
+            model:
+              datasource:
+                type: loki
+                uid: loki
+              expr: 'sum(count_over_time({job="crawler"} |= "| ERROR |" [5m]))'
+              queryType: instant
+              refId: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+          - refId: B
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: A
+              refId: B
+              conditions:
+                - evaluator:
+                    type: gt
+                    params: [0]
+
+      # 試題二：API 查詢結果為空。
+      - uid: api-empty-result
+        title: API 查無資料（empty_result）
+        condition: B
+        for: 0s
+        noDataState: OK
+        execErrState: Error
+        labels:
+          severity: warning
+        annotations:
+          summary: "試題二 API 在近 5 分鐘內出現查無資料事件"
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: loki
+            model:
+              datasource:
+                type: loki
+                uid: loki
+              expr: 'sum(count_over_time({job="api"} |= "empty_result" [5m]))'
+              queryType: instant
+              refId: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+          - refId: B
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: A
+              refId: B
+              conditions:
+                - evaluator:
+                    type: gt
+                    params: [0]
