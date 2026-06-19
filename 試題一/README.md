@@ -91,21 +91,23 @@ python .\main.py --captcha auto --areas 大安區
 
 ### 辨識率（人工標註樣本評測）
 
-為避免只對單一樣本集過度調整，另蒐集兩批各 100 張 holdout 驗證碼重新標註驗證。
+為避免只對單一樣本集過度調整，另蒐集三批各 100 張 holdout 驗證碼重新標註驗證。
 
-| 方案 | 原 100 張 exact | holdout #1 exact | holdout #2 exact | 合併 200 exact | 合併 char | 合併 len5 |
-|------|---------------:|-----------------:|-----------------:|---------------:|----------:|----------:|
-| 原圖直接辨識 | 59% | 62% | 58% | 60.0% | 80.9% | 68.5% |
-| 灰階 + Otsu（原本 auto 預設） | 71% | 69% | 72% | 70.5% | 87.8% | 80.5% |
-| `--captcha-variants 6` | 76% | 76% | 75% | 75.5% | 90.5% | 87.0% |
-| `--captcha-variants 18` | 76% | 76% | **81%** | **78.5%** | **93.0%** | **92.0%** |
-| `--captcha-variants 18 --captcha-decoder beam` | **85%** | **82%** | **88%** | **85.0%** | **96.4%** | **99.5%** |
+| 方案 | 原 100 張 exact | holdout #1 exact | holdout #2 exact | holdout #3 exact | 合併 300 exact | 合併 char | 合併 len5 |
+|------|---------------:|-----------------:|-----------------:|-----------------:|---------------:|----------:|----------:|
+| 原圖直接辨識 | 59% | 62% | 58% | 66% | 62.0% | 81.8% | 70.7% |
+| 灰階 + Otsu（原本 auto 預設） | 71% | 69% | 72% | 76% | 72.3% | 88.2% | 81.7% |
+| `--captcha-variants 6` | 78% | 76% | 75% | 78% | 76.3% | 90.9% | 88.0% |
+| `--captcha-variants 18` | 80% | 76% | **81%** | 78% | **78.3%** | **92.9%** | **92.3%** |
+| `--captcha-variants 18 --captcha-decoder beam` | **85%** | **82%** | **88%** | **85%** | **85.0%** | **96.3%** | **99.7%** |
 
-目前保留 `--captcha-variants 1 --captcha-decoder native` 作為預設，確保 `--captcha auto` 的原本速度與行為不變；需要兼顧速度與辨識率時建議使用 `--captcha-variants 6`，在兩批 holdout 合併後由 Otsu 的 70.5% 提升到 75.5%，且耗時仍約 73ms/張。若更重視準確率，可使用 `--captcha-variants 18 --captcha-decoder beam`，兩批 holdout 合併後達 85.0%，評測約 305ms/張。
+目前保留 `--captcha-variants 1 --captcha-decoder native` 作為預設，確保 `--captcha auto` 的原本速度與行為不變；需要兼顧速度與辨識率時建議使用 `--captcha-variants 6`，在三批 holdout 合併後由 Otsu 的 72.3% 提升到 76.3%，且耗時仍約 73ms/張。若更重視準確率，可使用 `--captcha-variants 18 --captcha-decoder beam`，三批 holdout 合併後達 85.0%，評測約 305ms/張。
 
-搭配「5 碼閘門 + 重試（每次換新驗證碼）」：以合併 holdout 的單次成功率估算，Otsu 約 70.5%、variants=6 約 75.5%、variants=18 native 約 78.5%、variants=18 beam 約 85.0%。累積成功率 = 1 − (1 − p)ⁿ；`auto_captcha_attempts=6` 時，Otsu 約 99.93%、variants=6 約 99.98%、variants=18 beam 約 99.999%，用盡仍失敗才降級人工。
+曾測試 beam variants 剪枝：前兩批 holdout 找到的 `drop6` 在第三批由 85% 降到 84%，未通過新 holdout 驗證，因此正式建議仍保留完整 `18 variants + beam`。
 
-> 評測與資料蒐集腳本見 [scripts/](scripts/)：`collect_captchas.py`（蒐集樣本）、`label_captchas.py`（產生標註頁）、`eval_captcha.py`（ddddocr 預測報告）、`eval_cv.py`（比較各種 CV 前處理）、`eval_variant_selector.py`（比較 variants selector 策略）。這些腳本與其產物僅供評測，不影響主流程。
+搭配「5 碼閘門 + 重試（每次換新驗證碼）」：以合併 holdout 的單次成功率估算，Otsu 約 72.3%、variants=6 約 76.3%、variants=18 native 約 78.3%、variants=18 beam 約 85.0%。累積成功率 = 1 − (1 − p)ⁿ；`auto_captcha_attempts=6` 時，Otsu 約 99.95%、variants=6 約 99.98%、variants=18 beam 約 99.999%，用盡仍失敗才降級人工。
+
+> 評測與資料蒐集腳本見 [scripts/](scripts/)：`collect_captchas.py`（蒐集樣本）、`label_captchas.py`（產生標註頁）、`eval_captcha.py`（ddddocr 預測報告）、`eval_cv.py`（比較各種 CV 前處理）、`eval_variant_selector.py`（比較 variants selector 策略）、`eval_beam_ablation.py`（beam variants 剪枝實驗）。這些腳本與其產物僅供評測，不影響主流程。
 
 ## 輸出
 
@@ -188,6 +190,6 @@ python .\main.py --captcha auto --captcha-variants 18 --captcha-decoder beam --a
 ```
 
 - `--captcha-variants 1`: 原本行為；只跑一張 Otsu 前處理圖，速度最快。
-- `--captcha-variants 6`: 建議的平衡模式；合併 holdout exact 75.5%，速度與準確率較平衡。
-- `--captcha-variants 18`: 完整 native 搜尋；合併 holdout exact 78.5%。
+- `--captcha-variants 6`: 建議的平衡模式；合併 holdout exact 76.3%，速度與準確率較平衡。
+- `--captcha-variants 18`: 完整 native 搜尋；合併 holdout exact 78.3%。
 - `--captcha-decoder beam`: 最高準確率模式；限制 CTC 只輸出 5 碼 A-Z/0-9，合併 holdout exact 85.0%，但比 native 慢。
