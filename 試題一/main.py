@@ -31,6 +31,12 @@ def build_parser() -> argparse.ArgumentParser:
         default="",
         help="指定行政區名稱，以逗號分隔，例如 大安區,信義區。留空則查詢台北市全部行政區。",
     )
+    parser.add_argument(
+        "--captcha-variants",
+        type=int,
+        default=1,
+        help="auto OCR preprocessing variants; 1 keeps the original single Otsu path",
+    )
     parser.add_argument("--db-path", default=str(Path("data") / "doorplate.sqlite3"))
     parser.add_argument("--csv-path", default=str(Path("data") / "doorplate_records.csv"))
     parser.add_argument("--log-path", default=str(Path("logs") / "crawler.log"))
@@ -39,12 +45,15 @@ def build_parser() -> argparse.ArgumentParser:
 
 async def run() -> int:
     args = build_parser().parse_args()
+    if args.captcha_variants < 1:
+        raise ValueError("--captcha-variants must be >= 1")
     config = CrawlerConfig(
         headless=args.headless,
         start_date=RocDate.parse(args.start_date),
         end_date=RocDate.parse(args.end_date),
         register_kind=args.register_kind,
         captcha_mode=args.captcha,
+        captcha_variant_count=args.captcha_variants,
         db_path=Path(args.db_path),
         csv_path=Path(args.csv_path),
         log_path=Path(args.log_path),

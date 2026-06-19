@@ -13,7 +13,7 @@
   - `pytest` 單元測試
 - `scripts/`
   - 輸出檢查與驗證碼蒐集／標註／辨識評測工具
-- `規格文件.md`
+- `試題一規格文件.md`
   - 已確認的網站規格與技術選型
 
 ## 前置需求
@@ -89,14 +89,20 @@ python .\main.py --captcha auto --areas 大安區
 - **自動降級**：`auto` 先讓 OCR 嘗試數次（預設 6 次），仍失敗才**自動降級為人工輸入**（沿用上節的視窗／截圖方式），確保最終仍可完成。
 - **CPU 即可**：單張辨識約 10ms 級，不需要 GPU。
 
-### 辨識率（以 100 張人工標註樣本評測）
+### 辨識率（人工標註樣本評測）
 
-| 方案 | 整串正確率 | 輸出 5 碼時正確率 |
-|------|-----------:|------------------:|
-| 原圖直接辨識 | 59% | — |
-| **灰階 + Otsu（採用）** | **71%** | **91%** |
+為避免只對單一樣本集過度調整，另蒐集 100 張 holdout 驗證碼重新標註驗證。
 
-搭配「5 碼閘門 + 重試（每次換新驗證碼）」：單次成功率約 71%、彼此獨立，累積成功率 = 1 − (1 − 0.71)ⁿ，**重試 6 次即達約 99.9%**（`auto_captcha_attempts` 預設 6 即據此設定），用盡仍失敗才降級人工。
+| 方案 | 原 100 張 exact | holdout 100 張 exact | holdout char | holdout len5 |
+|------|---------------:|---------------------:|-------------:|-------------:|
+| 原圖直接辨識 | 59% | 62% | 83.2% | 70% |
+| 灰階 + Otsu（原本 auto 預設） | 71% | 69% | 88.4% | 82% |
+| `--captcha-variants 6` | 76% | **76%** | 91.0% | 89% |
+| `--captcha-variants 18` | 76% | **76%** | **91.8%** | **90%** |
+
+目前保留 `--captcha-variants 1` 作為預設，確保 `--captcha auto` 的原本速度與行為不變；需要提高辨識率時建議使用 `--captcha-variants 6`，在 holdout 上由 69% 提升到 76%，且耗時仍約 73ms/張。`--captcha-variants 18` 約 243ms/張，整串正確率相同，但字元正確率與 5 碼輸出比例略高。
+
+搭配「5 碼閘門 + 重試（每次換新驗證碼）」：以 holdout 的單次成功率估算，Otsu 約 69%、variants=6 約 76%。累積成功率 = 1 − (1 − p)ⁿ；`auto_captcha_attempts=6` 時，Otsu 約 99.91%，variants=6 約 99.98%，用盡仍失敗才降級人工。
 
 > 評測與資料蒐集腳本見 [scripts/](scripts/)：`collect_captchas.py`（蒐集樣本）、`label_captchas.py`（產生標註頁）、`eval_captcha.py`（ddddocr 預測報告）、`eval_cv.py`（比較各種 CV 前處理）。這些腳本與其產物僅供評測，不影響主流程。
 
@@ -170,3 +176,15 @@ python .\main.py --city 台中市
 cd .\試題一
 python .\main.py --city 臺北市 --areas 大安區
 ```
+## 進階 OCR variants
+
+`--captcha auto` 預設仍使用原本的單一 Otsu 流程。若要用較多 CPU 時間換取較高辨識率，可加上 `--captcha-variants`：
+
+```powershell
+python .\main.py --captcha auto --captcha-variants 6 --areas 大安區
+python .\main.py --captcha auto --captcha-variants 18 --areas 大安區
+```
+
+- `--captcha-variants 1`: 原本行為；只跑一張 Otsu 前處理圖，速度最快。
+- `--captcha-variants 6`: 建議的進階模式；holdout exact 76%，速度與準確率較平衡。
+- `--captcha-variants 18`: 最完整搜尋；holdout exact 同為 76%，但 char / len5 略高。

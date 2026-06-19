@@ -468,6 +468,72 @@ class DoorplateScraper:
             raise CrawlerError("Otsu 前處理後 PNG 編碼失敗")
         return buf.tobytes()
 
+    @staticmethod
+    def _encode_png_array(image) -> bytes:
+        import cv2
+
+        ok, buf = cv2.imencode(".png", image)
+        if not ok:
+            raise CrawlerError("Captcha variant PNG encoding failed")
+        return buf.tobytes()
+
+    @staticmethod
+    def _captcha_variant_pngs(png_bytes: bytes, requested_count: int) -> list[tuple[str, bytes]]:
+        import cv2
+        import numpy as np
+
+        source = cv2.imdecode(np.frombuffer(png_bytes, np.uint8), cv2.IMREAD_COLOR)
+        if source is None:
+            raise CrawlerError("Captcha PNG decode failed")
+
+        gray = cv2.cvtColor(source, cv2.COLOR_BGR2GRAY)
+        rect2 = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2))
+        cross2 = cv2.getStructuringElement(cv2.MORPH_CROSS, (2, 2))
+        rect3 = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
+
+        def threshold(resized):
+            return cv2.threshold(resized, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
+
+        def scaled_otsu(scale: float, interpolation: int):
+            resized = cv2.resize(gray, None, fx=scale, fy=scale, interpolation=interpolation)
+            return threshold(resized)
+
+        def erode(scale: float, kernel):
+            return cv2.erode(scaled_otsu(scale, cv2.INTER_CUBIC), kernel, iterations=1)
+
+        def open_morph(scale: float, kernel):
+            return cv2.morphologyEx(scaled_otsu(scale, cv2.INTER_CUBIC), cv2.MORPH_OPEN, kernel)
+
+        def close_morph(scale: float, kernel):
+            return cv2.morphologyEx(scaled_otsu(scale, cv2.INTER_CUBIC), cv2.MORPH_CLOSE, kernel)
+
+        def padded(scale: float, pad: int):
+            image = scaled_otsu(scale, cv2.INTER_CUBIC)
+            return cv2.copyMakeBorder(image, pad, pad, pad, pad, cv2.BORDER_CONSTANT, value=255)
+
+        variants = [
+            ("otsu", lambda: scaled_otsu(1, cv2.INTER_CUBIC)),
+            ("s4_nearest_otsu", lambda: scaled_otsu(4, cv2.INTER_NEAREST)),
+            ("s4_area_otsu", lambda: scaled_otsu(4, cv2.INTER_AREA)),
+            ("s3_nearest_otsu", lambda: scaled_otsu(3, cv2.INTER_NEAREST)),
+            ("s3_area_otsu", lambda: scaled_otsu(3, cv2.INTER_AREA)),
+            ("s25_erode_rect2", lambda: erode(2.5, rect2)),
+            ("s2_erode_rect2", lambda: erode(2, rect2)),
+            ("s2_erode_cross2", lambda: erode(2, cross2)),
+            ("s2_open_rect2", lambda: open_morph(2, rect2)),
+            ("s25_nearest_otsu", lambda: scaled_otsu(2.5, cv2.INTER_NEAREST)),
+            ("s2_cubic_otsu", lambda: scaled_otsu(2, cv2.INTER_CUBIC)),
+            ("s3_erode_cross2", lambda: erode(3, cross2)),
+            ("s3_pad2", lambda: padded(3, 2)),
+            ("s125_nearest_otsu", lambda: scaled_otsu(1.25, cv2.INTER_NEAREST)),
+            ("s25_close_rect2", lambda: close_morph(2.5, rect2)),
+            ("s2_pad2", lambda: padded(2, 2)),
+            ("s25_erode_rect3", lambda: erode(2.5, rect3)),
+            ("s25_open_rect2", lambda: open_morph(2.5, rect2)),
+        ]
+        selected = variants[: min(max(1, requested_count), len(variants))]
+        return [(name, DoorplateScraper._encode_png_array(fn())) for name, fn in selected]
+
     def _ocr_captcha(self, driver: WebDriver, area_name: str, attempt: int) -> str:
         """auto 模式 provider：取圖 → Otsu 前處理 → ddddocr 辨識，回傳大寫結果。"""
         _ = driver
@@ -480,9 +546,35 @@ class DoorplateScraper:
                 ) from exc
             self._ocr = ddddocr.DdddOcr(show_ad=False)
         png = self._grab_captcha_png()
-        processed = self._otsu_png(png)
-        text = (self._ocr.classification(processed) or "").strip().upper()
-        self.logger.info("OCR[%s] 第 %s 次辨識結果：%r", area_name, attempt, text)
+        variant_count = max(1, self.config.captcha_variant_count)
+        if variant_count == 1:
+            processed = self._otsu_png(png)
+            text = (self._ocr.classification(processed) or "").strip().upper()
+            self.logger.info("OCR[%s] 第 %s 次辨識結果：%r", area_name, attempt, text)
+            return text
+
+        candidates: list[tuple[bool, float, str, str]] = []
+        variants = self._captcha_variant_pngs(png, variant_count)
+        for variant_name, processed in variants:
+            result = self._ocr.classification(processed, probability=True)
+            text = (result.get("text") or "").strip().upper()
+            confidence = float(result.get("confidence") or 0.0)
+            is_expected_length = len(text) == self.config.captcha_length
+            candidates.append((is_expected_length, confidence, variant_name, text))
+
+        is_expected_length, confidence, variant_name, text = max(
+            candidates, key=lambda item: (item[0], item[1])
+        )
+        self.logger.info(
+            "OCR[%s] attempt=%s variants=%s selected=%s conf=%.4f len_ok=%s result=%r",
+            area_name,
+            attempt,
+            len(variants),
+            variant_name,
+            confidence,
+            is_expected_length,
+            text,
+        )
         return text
 
     def _collect_paginated_records(

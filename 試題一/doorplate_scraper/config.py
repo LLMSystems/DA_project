@@ -75,6 +75,9 @@ class CrawlerConfig:
     # 取 6 在「成功率」與「失敗時等待時間」間取平衡：到 6 次已 ~99.9%，
     # 再往上邊際效益 <0.1%，不如直接降級人工。
     auto_captcha_attempts: int = 6
+    # 1 keeps the original single Otsu OCR path. Values >1 enable the advanced
+    # multi-variant selector, capped by the built-in variant list.
+    captcha_variant_count: int = 1
     db_path: Path = field(default_factory=lambda: Path("data") / "doorplate.sqlite3")
     csv_path: Path = field(default_factory=lambda: Path("data") / "doorplate_records.csv")
     log_path: Path = field(default_factory=lambda: Path("logs") / "crawler.log")
