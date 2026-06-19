@@ -2,6 +2,10 @@
 # 容器關聯：crawler 寫 DB+log → api 讀同一 DB、寫同一 log 區 → promtail 收集 → loki 儲存
 #          → grafana 檢視/告警 → notifier-sink 收 webhook 落地通報。
 
+# 明確指定專案名稱：資料夾為中文「試題三」，Compose 無法由其推導出合法專案名，
+# 不指定會報「project name must not be empty」。
+name: doorplate
+
 services:
   # 試題一：門牌爬蟲（一次性工作，跑完即退出）。
   crawler:
