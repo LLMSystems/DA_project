@@ -1,0 +1,7 @@
+# Python 快取
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# 執行產物（審閱者本機執行時會重新產生）
+logs/
