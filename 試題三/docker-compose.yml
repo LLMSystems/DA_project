@@ -59,7 +59,7 @@ services:
     restart: unless-stopped
     command: -config.file=/etc/loki/loki-config.yml
     volumes:
-      - ./loki/loki-config.yml:/etc/loki/loki-config.yml:ro
+      - ./loki:/etc/loki:ro          # 掛目錄而非單檔，避免改檔後 bind mount 失效
       - loki-data:/loki
     ports:
       - "3100:3100"
@@ -69,9 +69,9 @@ services:
     image: grafana/promtail:3.0.0
     container_name: doorplate-promtail
     restart: unless-stopped
-    command: -config.file=/etc/promtail/config.yml
+    command: -config.file=/etc/promtail/promtail-config.yml
     volumes:
-      - ./promtail/promtail-config.yml:/etc/promtail/config.yml:ro
+      - ./promtail:/etc/promtail:ro   # 掛目錄而非單檔，避免改檔後 bind mount 失效
       - doorplate-logs:/logs:ro
     depends_on:
       - loki
@@ -106,7 +106,7 @@ services:
       - crawler
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./ofelia/config.ini:/etc/ofelia/config.ini:ro
+      - ./ofelia:/etc/ofelia:ro       # 掛目錄而非單檔，避免改檔後 bind mount 失效
 
 volumes:
   doorplate-data:
