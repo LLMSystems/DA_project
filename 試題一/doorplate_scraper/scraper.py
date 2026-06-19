@@ -87,8 +87,21 @@ class DoorplateScraper:
         if self.config.headless:
             options.add_argument("--headless=new")
         options.add_argument("--disable-gpu")
+        # 容器內必要旗標：關閉 sandbox、避免 /dev/shm 過小導致 Chrome 崩潰。
+        options.add_argument("--no-sandbox")
+        options.add_argument("--disable-dev-shm-usage")
         options.add_argument("--window-size=1600,1400")
         options.add_argument("--lang=zh-TW")
+        # 容器化時以環境變數指定 chromium / chromedriver 路徑（本機不設則維持原行為，
+        # 由 Selenium Manager 自動處理）。
+        chrome_binary = os.getenv("CHROME_BINARY")
+        if chrome_binary:
+            options.binary_location = chrome_binary
+        chromedriver = os.getenv("CHROMEDRIVER")
+        if chromedriver:
+            from selenium.webdriver.chrome.service import Service
+
+            return webdriver.Chrome(options=options, service=Service(executable_path=chromedriver))
         return webdriver.Chrome(options=options)
 
     def _required_driver(self) -> WebDriver:
