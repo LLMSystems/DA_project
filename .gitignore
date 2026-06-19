@@ -225,3 +225,7 @@ interview_assignment.pdf
 作業整理.md
 temp/
 試題一/temp/
+
+# Local crawler/evaluation artifacts
+logs/
+試題一/data/captcha_variant_predictions*.json
