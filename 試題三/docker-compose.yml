@@ -1,0 +1,98 @@
+# 試題三：以 docker compose 串接爬蟲、API、Log 收集與通報。
+# 容器關聯：crawler 寫 DB+log → api 讀同一 DB、寫同一 log 區 → promtail 收集 → loki 儲存
+#          → grafana 檢視/告警 → notifier-sink 收 webhook 落地通報。
+
+services:
+  # 試題一：門牌爬蟲（一次性工作，跑完即退出）。
+  crawler:
+    build: ../試題一
+    container_name: doorplate-crawler
+    restart: "no"
+    volumes:
+      - doorplate-data:/data
+      - doorplate-logs:/logs
+    # 預設限定兩區以加速 demo；要抓台北市全部行政區，移除 --areas 即可。
+    command: >
+      python main.py --captcha auto --headless
+      --areas 大安區,中正區
+      --db-path /data/doorplate.sqlite3
+      --log-path /logs/crawler/crawler.log
+
+  # 試題二：查詢 API。
+  api:
+    build: ../試題二
+    container_name: doorplate-api
+    restart: unless-stopped
+    environment:
+      DB_PATH: /data/doorplate.sqlite3
+      LOG_DIR: /logs/api
+    ports:
+      - "8000:8000"
+    volumes:
+      - doorplate-data:/data
+      - doorplate-logs:/logs
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health').status==200 else 1)\""]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  # 通知接收端：收 Grafana webhook，落地成可查詢的通報紀錄。
+  notifier-sink:
+    build: ./notifier_sink
+    container_name: doorplate-notifier-sink
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+    volumes:
+      - sink-data:/sink
+
+  # Loki：log 儲存與查詢。
+  loki:
+    image: grafana/loki:3.0.0
+    container_name: doorplate-loki
+    restart: unless-stopped
+    command: -config.file=/etc/loki/loki-config.yml
+    volumes:
+      - ./loki/loki-config.yml:/etc/loki/loki-config.yml:ro
+      - loki-data:/loki
+    ports:
+      - "3100:3100"
+
+  # Promtail：收集共用 log volume，推送到 Loki。
+  promtail:
+    image: grafana/promtail:3.0.0
+    container_name: doorplate-promtail
+    restart: unless-stopped
+    command: -config.file=/etc/promtail/config.yml
+    volumes:
+      - ./promtail/promtail-config.yml:/etc/promtail/config.yml:ro
+      - doorplate-logs:/logs:ro
+    depends_on:
+      - loki
+
+  # Grafana：檢視即時/歷史 log + 告警（平台偵測 → webhook-sink）。
+  grafana:
+    image: grafana/grafana:11.1.0
+    container_name: doorplate-grafana
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    depends_on:
+      - loki
+      - notifier-sink
+
+volumes:
+  doorplate-data:
+  doorplate-logs:
+  loki-data:
+  grafana-data:
+  sink-data:
