@@ -229,3 +229,4 @@ temp/
 # Local crawler/evaluation artifacts
 logs/
 試題一/data/captcha_variant_predictions*.json
+試題一/data/captcha_beam_predictions*.json
