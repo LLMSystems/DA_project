@@ -181,8 +181,10 @@ class DoorplateScraper:
                     "OCR 連續 %s 次未過，%s 降級為人工輸入驗證碼", auto_budget, area_name
                 )
 
-            previous_signature = None if attempt == 1 else self._last_captcha_signature
-            captcha_signature = self._wait_for_captcha_ready(previous_signature=previous_signature)
+            # 每輪只需等驗證碼「已載入」即可取得當前 signature。
+            # 「等待換新」已在 captcha_error 與 5 碼閘門分支各自處理；此處若再要求
+            # 與前一張不同，剛換好的新驗證碼會被誤判為「沒變」而 timeout。
+            captcha_signature = self._wait_for_captcha_ready(previous_signature=None)
             self._last_captcha_signature = captcha_signature
             captcha_input = driver.find_element(By.ID, "captchaInput_captchaKey")
 
