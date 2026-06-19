@@ -54,6 +54,23 @@ docker compose up --build
 - **即時/歷史 Log 查詢**：Grafana → Dashboards → 「門牌系統維運監控」，含爬蟲與 API 兩個 log 面板與異常計數。也可在 Explore 用 LogQL（如 `{job="crawler"}`、`{job="api"} |= "empty_result"`）查歷史。
 - **通報紀錄**：開 <http://localhost:9000>（HTML 表格）或 <http://localhost:9000/notifications>（JSON）。
 
+### 示範畫面
+
+維運 Dashboard（即時 Log + 異常計數）：
+
+![Grafana Dashboard](../docs/03_grafana_dashboard.png)
+
+歷史 Log 查詢（Explore + LogQL）：
+
+![Grafana Explore](../docs/04_grafana_explore.png)
+
+告警觸發（平台偵測）與通報落地（notifier-sink）：
+
+![Alert rules](../docs/05_alert_firing.png)
+![通報紀錄](../docs/06_sink_notifications.png)
+
+> 更完整的交付物對照見 [docs/README.md](../docs/README.md)。
+
 ## 驗證兩種異常通報
 
 1. **API 查無資料（試題二）**：對不存在的區查詢，會記 `empty_result`，1 分鐘內 Grafana 告警 → sink 出現一筆通報。
