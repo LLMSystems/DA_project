@@ -94,17 +94,23 @@ docker compose up --build
 
 ## [加分題] 自動化排程
 
-`crawler` 容器為一次性工作。要定期執行有幾種方式：
+已用 **Ofelia**（Docker 原生排程器）實作，隨 compose 一起啟動，無需宿主機 cron。
 
-- **Host 排程**：以 cron（Linux）或工作排程器呼叫 `docker compose run --rm crawler`。
-  例：每日 02:00 執行 `0 2 * * * cd /path/試題三 && docker compose run --rm crawler`。
-- **常駐排程容器**：另起一個帶 cron 的容器定時觸發 crawler（可後續加入 compose）。
+- 服務：`scheduler`（`mcuadros/ofelia`），設定見 [`ofelia/config.ini`](ofelia/config.ini)。
+- 行為：依排程**起一個新的 `doorplate-crawler` 容器**跑全量抓取，跑完即刪除（`delete = true`）。
+- **預設每日 02:00**（`schedule = 0 0 2 * * *`，6 欄位 cron）。demo 想立刻看到效果，把它改成 `@every 5m` 再 `docker compose up -d scheduler`。
+- 排程跑的 DB／log 寫入同一組共用 volume，因此**排程結果一樣進試題三監控；若排程跑失敗也會觸發告警**，形成維運閉環。
+- 冪等：爬蟲以 `INSERT OR IGNORE`（`row_hash`）去重，定期重跑不會產生重複資料。
+
+> 需掛 `docker.sock` 讓排程器能 spawn 容器。若環境不允許掛 socket，亦可改用 Host 排程：
+> `0 2 * * * cd /path/試題三 && docker compose run --rm crawler ...`（cron / 工作排程器）。
 
 ## 設定檔一覽
 
 | 路徑 | 說明 |
 |------|------|
 | `docker-compose.yml` | 服務編排與容器關聯 |
+| `ofelia/config.ini` | [加分題] 自動化排程設定（Ofelia） |
 | `loki/loki-config.yml` | Loki 單體 + 檔案系統儲存、保留 7 天 |
 | `promtail/promtail-config.yml` | 收集爬蟲（文字）與 API（JSON）兩種 log |
 | `grafana/provisioning/datasources/` | Loki 資料源 |

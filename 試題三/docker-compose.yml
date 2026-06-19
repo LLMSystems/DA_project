@@ -10,6 +10,7 @@ services:
   # 試題一：門牌爬蟲（一次性工作，跑完即退出）。
   crawler:
     build: ../試題一
+    image: doorplate-crawler:latest   # 固定 tag，供排程器（Ofelia）以此映像起新容器
     container_name: doorplate-crawler
     restart: "no"
     volumes:
@@ -93,6 +94,19 @@ services:
     depends_on:
       - loki
       - notifier-sink
+
+  # [加分題] 自動化排程：Ofelia 依排程起一個新的 crawler 容器定期抓取。
+  # 設定見 ofelia/config.ini；掛 docker.sock 以便 spawn 容器。
+  scheduler:
+    image: mcuadros/ofelia:latest
+    container_name: doorplate-scheduler
+    restart: unless-stopped
+    command: daemon --config=/etc/ofelia/config.ini
+    depends_on:
+      - crawler
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./ofelia/config.ini:/etc/ofelia/config.ini:ro
 
 volumes:
   doorplate-data:
