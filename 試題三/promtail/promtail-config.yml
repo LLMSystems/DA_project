@@ -29,6 +29,22 @@ scrape_configs:
       - labels:
           level:
 
+  # 排程器（Ofelia）事件：透過 Docker 服務發現只收 scheduler 容器的 stdout，
+  # 讓「排程何時觸發 job」也能在平台上看到（需掛 docker.sock）。
+  - job_name: scheduler
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 5s
+        filters:
+          - name: name
+            values: ["doorplate-scheduler"]
+    relabel_configs:
+      - source_labels: ["__meta_docker_container_name"]
+        regex: "/?(.*)"
+        target_label: container
+      - target_label: job
+        replacement: scheduler
+
   # 試題二 API log：JSON 行，抽出 level / kind / event 當 label。
   - job_name: api
     static_configs:

@@ -89,6 +89,21 @@
           "expr": "{job=\"api\"}"
         }
       ]
+    },
+    {
+      "id": 5,
+      "type": "logs",
+      "title": "排程器事件（Ofelia）— 每次觸發爬蟲的紀錄",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 16 },
+      "datasource": { "type": "loki", "uid": "loki" },
+      "options": { "showTime": true, "wrapLogMessage": true, "sortOrder": "Descending" },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "loki", "uid": "loki" },
+          "expr": "{job=\"scheduler\"}"
+        }
+      ]
     }
   ]
 }

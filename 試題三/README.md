@@ -101,6 +101,8 @@ docker compose up --build
 - **預設每日 02:00**（`schedule = 0 0 2 * * *`，6 欄位 cron）。demo 想立刻看到效果，把它改成 `@every 5m` 再 `docker compose up -d scheduler`。
 - 排程跑的 DB／log 寫入同一組共用 volume，因此**排程結果一樣進試題三監控；若排程跑失敗也會觸發告警**，形成維運閉環。
 - 冪等：爬蟲以 `INSERT OR IGNORE`（`row_hash`）去重，定期重跑不會產生重複資料。
+- **可觀測**：Promtail 透過 docker.sock 收 scheduler 容器 stdout（`job=scheduler`），
+  Dashboard 的「排程器事件（Ofelia）」面板即可看到每次排程何時觸發 job；該輪爬蟲的詳細 log 則在「爬蟲即時 Log」面板。
 
 > 需掛 `docker.sock` 讓排程器能 spawn 容器。若環境不允許掛 socket，亦可改用 Host 排程：
 > `0 2 * * * cd /path/試題三 && docker compose run --rm crawler ...`（cron / 工作排程器）。

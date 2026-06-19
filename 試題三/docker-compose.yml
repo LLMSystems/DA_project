@@ -73,6 +73,7 @@ services:
     volumes:
       - ./promtail:/etc/promtail:ro   # 掛目錄而非單檔，避免改檔後 bind mount 失效
       - doorplate-logs:/logs:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro  # 讀 scheduler 容器 stdout（排程事件）
     depends_on:
       - loki
 
