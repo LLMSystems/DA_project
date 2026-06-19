@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import base64
 import logging
+import math
 import os
 import subprocess
 import sys
 import time
+from collections import defaultdict
 from dataclasses import dataclass
 from math import ceil
 from pathlib import Path
@@ -39,7 +41,18 @@ class QueryState:
     total_records: int = 0
 
 
+@dataclass(slots=True)
+class CaptchaCandidate:
+    variant_name: str
+    text: str
+    confidence: float
+
+
 class DoorplateScraper:
+    _CAPTCHA_ALLOWED_CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    _CAPTCHA_BEAM_SIZE = 10
+    _CAPTCHA_BEAM_TOP_CHARS = 8
+
     def __init__(
         self,
         config: CrawlerConfig,
@@ -70,6 +83,7 @@ class DoorplateScraper:
         self.driver: WebDriver | None = None
         self.wait: WebDriverWait | None = None
         self._last_captcha_signature: str | None = None
+        self._captcha_charset_indices: dict[str, list[int]] | None = None
 
     def __enter__(self) -> "DoorplateScraper":
         self.driver = self._build_driver()
@@ -536,6 +550,113 @@ class DoorplateScraper:
         selected = variants[: min(max(1, requested_count), len(variants))]
         return [(name, DoorplateScraper._encode_png_array(fn())) for name, fn in selected]
 
+    @staticmethod
+    def _logadd(left: float, right: float) -> float:
+        if left == -math.inf:
+            return right
+        if right == -math.inf:
+            return left
+        if left < right:
+            left, right = right, left
+        return left + math.log1p(math.exp(right - left))
+
+    def _captcha_allowed_indices(self, charset: list[str]) -> dict[str, list[int]]:
+        if self._captcha_charset_indices is None:
+            indices: dict[str, list[int]] = {char: [] for char in self._CAPTCHA_ALLOWED_CHARS}
+            for index, char in enumerate(charset):
+                upper = char.upper() if char else char
+                if upper in indices:
+                    indices[upper].append(index)
+            self._captcha_charset_indices = indices
+        return self._captcha_charset_indices
+
+    def _ctc_beam_decode(self, result: dict, target_length: int) -> tuple[str, float]:
+        """Decode ddddocr probability output as fixed-length A-Z/0-9 CTC."""
+        probabilities = result.get("probabilities") or []
+        charset = result.get("charset") or []
+        if not probabilities or not charset:
+            return (result.get("text") or "").strip().upper(), float(result.get("confidence") or 0.0)
+
+        char_indices = self._captcha_allowed_indices(charset)
+        beams: dict[tuple[str, ...], tuple[float, float]] = {(): (0.0, -math.inf)}
+
+        for step in probabilities:
+            row = step[0]
+            blank_logp = math.log(max(float(row[0]), 1e-30))
+            char_logps: list[tuple[str, float]] = []
+            for char, indices in char_indices.items():
+                prob = sum(float(row[index]) for index in indices)
+                char_logps.append((char, math.log(max(prob, 1e-30))))
+            char_logps.sort(key=lambda item: item[1], reverse=True)
+            char_logps = char_logps[: self._CAPTCHA_BEAM_TOP_CHARS]
+
+            next_beams: dict[tuple[str, ...], tuple[float, float]] = defaultdict(
+                lambda: (-math.inf, -math.inf)
+            )
+            for prefix, (prob_blank, prob_nonblank) in beams.items():
+                next_blank, next_nonblank = next_beams[prefix]
+                next_blank = self._logadd(next_blank, prob_blank + blank_logp)
+                next_blank = self._logadd(next_blank, prob_nonblank + blank_logp)
+                next_beams[prefix] = (next_blank, next_nonblank)
+
+                for char, char_logp in char_logps:
+                    if len(prefix) >= target_length and (not prefix or prefix[-1] != char):
+                        continue
+
+                    if prefix and prefix[-1] == char:
+                        same_blank, same_nonblank = next_beams[prefix]
+                        same_nonblank = self._logadd(same_nonblank, prob_nonblank + char_logp)
+                        next_beams[prefix] = (same_blank, same_nonblank)
+
+                        if len(prefix) < target_length:
+                            extended = prefix + (char,)
+                            ext_blank, ext_nonblank = next_beams[extended]
+                            ext_nonblank = self._logadd(ext_nonblank, prob_blank + char_logp)
+                            next_beams[extended] = (ext_blank, ext_nonblank)
+                    else:
+                        extended = prefix + (char,)
+                        ext_blank, ext_nonblank = next_beams[extended]
+                        ext_nonblank = self._logadd(ext_nonblank, prob_blank + char_logp)
+                        ext_nonblank = self._logadd(ext_nonblank, prob_nonblank + char_logp)
+                        next_beams[extended] = (ext_blank, ext_nonblank)
+
+            ranked = sorted(
+                next_beams.items(),
+                key=lambda item: self._logadd(item[1][0], item[1][1]),
+                reverse=True,
+            )
+            beams = dict(ranked[: self._CAPTCHA_BEAM_SIZE])
+
+        prefix, (prob_blank, prob_nonblank) = max(
+            beams.items(),
+            key=lambda item: (
+                len(item[0]) == target_length,
+                self._logadd(item[1][0], item[1][1]),
+            ),
+        )
+        log_probability = self._logadd(prob_blank, prob_nonblank)
+        # Normalize log probability so it can be summed across variants as a
+        # confidence-like agreement score.
+        confidence = math.exp(log_probability / max(1, len(probabilities)))
+        return "".join(prefix), confidence
+
+    def _select_captcha_by_agreement(
+        self, candidates: list[CaptchaCandidate]
+    ) -> CaptchaCandidate:
+        grouped: dict[str, list[CaptchaCandidate]] = defaultdict(list)
+        for candidate in candidates:
+            grouped[candidate.text].append(candidate)
+
+        text, members = max(
+            grouped.items(),
+            key=lambda item: (
+                len(item[0]) == self.config.captcha_length,
+                sum(candidate.confidence for candidate in item[1]),
+                max(candidate.confidence for candidate in item[1]),
+            ),
+        )
+        return max(members, key=lambda candidate: candidate.confidence)
+
     def _ocr_captcha(self, driver: WebDriver, area_name: str, attempt: int) -> str:
         """auto 模式 provider：取圖 → Otsu 前處理 → ddddocr 辨識，回傳大寫結果。"""
         _ = driver
@@ -549,35 +670,51 @@ class DoorplateScraper:
             self._ocr = ddddocr.DdddOcr(show_ad=False)
         png = self._grab_captcha_png()
         variant_count = max(1, self.config.captcha_variant_count)
-        if variant_count == 1:
+        decoder = self.config.captcha_decoder
+        if decoder not in {"native", "beam"}:
+            raise CrawlerError(f"Unsupported captcha decoder: {decoder}")
+
+        if variant_count == 1 and decoder == "native":
             processed = self._otsu_png(png)
             text = (self._ocr.classification(processed) or "").strip().upper()
             self.logger.info("OCR[%s] 第 %s 次辨識結果：%r", area_name, attempt, text)
             return text
 
-        candidates: list[tuple[bool, float, str, str]] = []
-        variants = self._captcha_variant_pngs(png, variant_count)
+        candidates: list[CaptchaCandidate] = []
+        variants = (
+            [("otsu", self._otsu_png(png))]
+            if variant_count == 1
+            else self._captcha_variant_pngs(png, variant_count)
+        )
         for variant_name, processed in variants:
             result = self._ocr.classification(processed, probability=True)
-            text = (result.get("text") or "").strip().upper()
-            confidence = float(result.get("confidence") or 0.0)
-            is_expected_length = len(text) == self.config.captcha_length
-            candidates.append((is_expected_length, confidence, variant_name, text))
+            if decoder == "beam":
+                text, confidence = self._ctc_beam_decode(result, self.config.captcha_length)
+            else:
+                text = (result.get("text") or "").strip().upper()
+                confidence = float(result.get("confidence") or 0.0)
+            candidates.append(CaptchaCandidate(variant_name, text, confidence))
 
-        is_expected_length, confidence, variant_name, text = max(
-            candidates, key=lambda item: (item[0], item[1])
+        selected = (
+            self._select_captcha_by_agreement(candidates)
+            if decoder == "beam"
+            else max(
+                candidates,
+                key=lambda item: (len(item.text) == self.config.captcha_length, item.confidence),
+            )
         )
         self.logger.info(
-            "OCR[%s] attempt=%s variants=%s selected=%s conf=%.4f len_ok=%s result=%r",
+            "OCR[%s] attempt=%s variants=%s decoder=%s selected=%s conf=%.4f len_ok=%s result=%r",
             area_name,
             attempt,
             len(variants),
-            variant_name,
-            confidence,
-            is_expected_length,
-            text,
+            decoder,
+            selected.variant_name,
+            selected.confidence,
+            len(selected.text) == self.config.captcha_length,
+            selected.text,
         )
-        return text
+        return selected.text
 
     def _collect_paginated_records(
         self,

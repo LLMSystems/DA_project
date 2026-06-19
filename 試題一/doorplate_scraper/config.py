@@ -78,6 +78,9 @@ class CrawlerConfig:
     # 1 keeps the original single Otsu OCR path. Values >1 enable the advanced
     # multi-variant selector, capped by the built-in variant list.
     captcha_variant_count: int = 1
+    # native keeps ddddocr's built-in greedy decoder. beam enables a slower
+    # restricted CTC decoder tuned for 5-character A-Z/0-9 captchas.
+    captcha_decoder: str = "native"
     db_path: Path = field(default_factory=lambda: Path("data") / "doorplate.sqlite3")
     csv_path: Path = field(default_factory=lambda: Path("data") / "doorplate_records.csv")
     log_path: Path = field(default_factory=lambda: Path("logs") / "crawler.log")

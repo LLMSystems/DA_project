@@ -37,6 +37,12 @@ def build_parser() -> argparse.ArgumentParser:
         default=1,
         help="auto OCR preprocessing variants; 1 keeps the original single Otsu path",
     )
+    parser.add_argument(
+        "--captcha-decoder",
+        choices=["native", "beam"],
+        default="native",
+        help="auto OCR decoder; beam is slower but constrains CTC output to 5 A-Z/0-9 chars",
+    )
     parser.add_argument("--db-path", default=str(Path("data") / "doorplate.sqlite3"))
     parser.add_argument("--csv-path", default=str(Path("data") / "doorplate_records.csv"))
     parser.add_argument("--log-path", default=str(Path("logs") / "crawler.log"))
@@ -54,6 +60,7 @@ async def run() -> int:
         register_kind=args.register_kind,
         captcha_mode=args.captcha,
         captcha_variant_count=args.captcha_variants,
+        captcha_decoder=args.captcha_decoder,
         db_path=Path(args.db_path),
         csv_path=Path(args.csv_path),
         log_path=Path(args.log_path),

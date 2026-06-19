@@ -15,6 +15,7 @@ def test_captcha_variants_default_keeps_original_ocr_path() -> None:
     config = CrawlerConfig()
 
     assert config.captcha_variant_count == 1
+    assert config.captcha_decoder == "native"
 
 
 def test_set_city_raises_for_unknown_city() -> None:
