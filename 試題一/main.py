@@ -84,6 +84,9 @@ async def run() -> int:
             for area_code, area_name in selected_areas:
                 logger.info("Start crawling %s", area_name)
                 try:
+                    # 每區都重新進到乾淨的查詢頁，避免上一區殘留的彈窗（swal2）或頁面狀態
+                    # 擋住後續操作而連環失敗。
+                    scraper.open_query_page()
                     records = scraper.query_area(
                         area_code=area_code,
                         area_name=area_name,
