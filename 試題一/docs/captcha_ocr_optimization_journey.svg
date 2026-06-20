@@ -1,0 +1,144 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="840" viewBox="0 0 1440 840" role="img" aria-labelledby="title desc">
+  <title id="title">驗證碼 OCR 優化歷程</title>
+  <desc id="desc">此圖表展示 OCR 完全匹配準確率，如何從原始 ddddocr 一路提升到最終的 18 種變體加上 CTC Beam 解碼方案。</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f8f1e6"/>
+      <stop offset="52%" stop-color="#fffaf0"/>
+      <stop offset="100%" stop-color="#edf4ee"/>
+    </linearGradient>
+    <linearGradient id="beamBar" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0%" stop-color="#0f4f58"/>
+      <stop offset="100%" stop-color="#27a193"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#27302e" flood-opacity="0.18"/>
+    </filter>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#145c63"/>
+    </marker>
+    <style>
+      .title { font: 800 36px 'Microsoft JhengHei', 'PingFang TC', 'Noto Sans TC', Verdana, sans-serif; fill: #172b2d; }
+      .subtitle { font: 500 18px 'Microsoft JhengHei', 'PingFang TC', 'Noto Sans TC', Verdana, sans-serif; fill: #66706b; }
+      .axis { stroke: #8c8577; stroke-width: 2; }
+      .grid { stroke: #d9d0bf; stroke-width: 1.2; opacity: 0.75; }
+      .tick { font: 500 14px 'Microsoft JhengHei', 'PingFang TC', 'Noto Sans TC', Verdana, sans-serif; fill: #5a625e; }
+      .label { font: 700 16px 'Microsoft JhengHei', 'PingFang TC', 'Noto Sans TC', Verdana, sans-serif; fill: #2d3836; }
+      .small { font: 500 13px 'Microsoft JhengHei', 'PingFang TC', 'Noto Sans TC', Verdana, sans-serif; fill: #68706c; }
+      .value { font: 800 24px 'Microsoft JhengHei', 'PingFang TC', 'Noto Sans TC', Verdana, sans-serif; fill: #172b2d; }
+      .delta { font: 800 14px 'Microsoft JhengHei', 'PingFang TC', 'Noto Sans TC', Verdana, sans-serif; fill: #145c63; }
+      .callout-title { font: 800 18px 'Microsoft JhengHei', 'PingFang TC', 'Noto Sans TC', Verdana, sans-serif; fill: #173d42; }
+      .callout { font: 600 14px 'Microsoft JhengHei', 'PingFang TC', 'Noto Sans TC', Verdana, sans-serif; fill: #24545a; }
+      .legend { font: 600 14px 'Microsoft JhengHei', 'PingFang TC', 'Noto Sans TC', Verdana, sans-serif; fill: #39423f; }
+    </style>
+  </defs>
+
+  <rect width="1440" height="840" fill="url(#bg)"/>
+  <rect x="58" y="50" width="1324" height="728" rx="34" fill="#fffaf0" stroke="#e4d7c2" stroke-width="1.5" filter="url(#shadow)"/>
+
+  <text x="720" y="105" text-anchor="middle" class="title">驗證碼 OCR 優化歷程</text>
+  <text x="720" y="136" text-anchor="middle" class="subtitle">300 張獨立人工標註保留驗證碼上的完全匹配準確率</text>
+
+  <!-- Plot area: x=150..1240, y=190..610. y scale 55..100. -->
+  <g id="plot">
+    <!-- Grid and y-axis labels -->
+    <line x1="150" y1="610" x2="1240" y2="610" class="axis"/>
+    <line x1="150" y1="190" x2="150" y2="610" class="axis"/>
+
+    <g>
+      <line x1="150" y1="563.33" x2="1240" y2="563.33" class="grid"/>
+      <line x1="150" y1="516.67" x2="1240" y2="516.67" class="grid"/>
+      <line x1="150" y1="470.00" x2="1240" y2="470.00" class="grid"/>
+      <line x1="150" y1="423.33" x2="1240" y2="423.33" class="grid"/>
+      <line x1="150" y1="376.67" x2="1240" y2="376.67" class="grid"/>
+      <line x1="150" y1="330.00" x2="1240" y2="330.00" class="grid"/>
+      <line x1="150" y1="283.33" x2="1240" y2="283.33" class="grid"/>
+      <line x1="150" y1="236.67" x2="1240" y2="236.67" class="grid"/>
+      <line x1="150" y1="190.00" x2="1240" y2="190.00" class="grid"/>
+
+      <text x="122" y="615" text-anchor="end" class="tick">55</text>
+      <text x="122" y="568" text-anchor="end" class="tick">60</text>
+      <text x="122" y="522" text-anchor="end" class="tick">65</text>
+      <text x="122" y="475" text-anchor="end" class="tick">70</text>
+      <text x="122" y="428" text-anchor="end" class="tick">75</text>
+      <text x="122" y="382" text-anchor="end" class="tick">80</text>
+      <text x="122" y="335" text-anchor="end" class="tick">85</text>
+      <text x="122" y="288" text-anchor="end" class="tick">90</text>
+      <text x="122" y="242" text-anchor="end" class="tick">95</text>
+      <text x="122" y="195" text-anchor="end" class="tick">100</text>
+    </g>
+
+    <text x="86" y="400" text-anchor="middle" class="label" transform="rotate(-90 86 400)">準確率 / 比例 (%)</text>
+
+    <!-- Supporting metric lines -->
+    <polyline points="210,360.53 450,300.13 690,274.93 930,256.27 1170,224.53"
+      fill="none" stroke="#3f7f91" stroke-width="4" stroke-dasharray="10 8" opacity="0.68"/>
+    <polyline points="210,458.27 450,355.73 690,296.00 930,255.33 1170,192.80"
+      fill="none" stroke="#9b5f30" stroke-width="4" stroke-dasharray="3 8" stroke-linecap="round" opacity="0.72"/>
+
+    <!-- Exact bars -->
+    <rect x="155" y="544.67" width="110" height="65.33" rx="12" fill="#b66d45"/>
+    <rect x="395" y="448.53" width="110" height="161.47" rx="12" fill="#d49445"/>
+    <rect x="635" y="411.20" width="110" height="198.80" rx="12" fill="#c8a93d"/>
+    <rect x="875" y="392.53" width="110" height="217.47" rx="12" fill="#6d9f71"/>
+    <rect x="1115" y="330.00" width="110" height="280.00" rx="12" fill="url(#beamBar)"/>
+
+    <!-- Exact growth line -->
+    <polyline points="210,544.67 450,448.53 690,411.20 930,392.53 1170,330.00"
+      fill="none" stroke="#1b3b3f" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+    <g fill="#fffaf0" stroke="#1b3b3f" stroke-width="5">
+      <circle cx="210" cy="544.67" r="11"/>
+      <circle cx="450" cy="448.53" r="11"/>
+      <circle cx="690" cy="411.20" r="11"/>
+      <circle cx="930" cy="392.53" r="11"/>
+      <circle cx="1170" cy="330.00" r="11"/>
+    </g>
+
+    <!-- Value labels -->
+    <text x="210" y="526" text-anchor="middle" class="value">62.0%</text>
+    <text x="450" y="430" text-anchor="middle" class="value">72.3%</text>
+    <text x="690" y="393" text-anchor="middle" class="value">76.3%</text>
+    <text x="930" y="374" text-anchor="middle" class="value">78.3%</text>
+    <text x="1170" y="310" text-anchor="middle" class="value">85.0%</text>
+
+    <!-- Delta badges -->
+    <g>
+      <rect x="300" y="476" width="62" height="30" rx="15" fill="#e6f0ea" stroke="#9db9aa"/>
+      <text x="331" y="497" text-anchor="middle" class="delta">+10.3</text>
+      <rect x="545" y="414" width="56" height="30" rx="15" fill="#e6f0ea" stroke="#9db9aa"/>
+      <text x="573" y="435" text-anchor="middle" class="delta">+4.0</text>
+      <rect x="790" y="386" width="56" height="30" rx="15" fill="#e6f0ea" stroke="#9db9aa"/>
+      <text x="818" y="407" text-anchor="middle" class="delta">+2.0</text>
+      <rect x="1022" y="336" width="56" height="30" rx="15" fill="#e6f0ea" stroke="#9db9aa"/>
+      <text x="1050" y="357" text-anchor="middle" class="delta">+6.7</text>
+    </g>
+
+    <!-- X labels -->
+    <text x="210" y="648" text-anchor="middle" class="label">原始 ddddocr</text>
+    <text x="450" y="648" text-anchor="middle" class="label">灰階 + Otsu</text>
+    <text x="690" y="648" text-anchor="middle" class="label">6 種 CV 變體</text>
+    <text x="690" y="671" text-anchor="middle" class="small">原生解碼器</text>
+    <text x="930" y="648" text-anchor="middle" class="label">18 種 CV 變體</text>
+    <text x="930" y="671" text-anchor="middle" class="small">原生解碼器</text>
+    <text x="1170" y="648" text-anchor="middle" class="label">18 種變體</text>
+    <text x="1170" y="671" text-anchor="middle" class="small">受限 CTC Beam</text>
+
+    <!-- Best callout -->
+    <path d="M 1032 250 C 1066 246, 1105 278, 1148 317" fill="none" stroke="#145c63" stroke-width="2.2" marker-end="url(#arrow)"/>
+    <rect x="782" y="198" width="324" height="102" rx="18" fill="#edf6f0" stroke="#6f9b8d" stroke-width="1.5"/>
+    <text x="804" y="226" class="callout-title">最佳驗證設定</text>
+    <text x="804" y="252" class="callout">18 種變體 + 受限 CTC Beam</text>
+    <text x="804" y="276" class="callout">完全匹配 85.0% / 字元 96.3% / 五碼 99.7%</text>
+
+    <!-- Legend -->
+    <rect x="168" y="204" width="266" height="96" rx="16" fill="#fffaf0" stroke="#d7c9b4"/>
+    <line x1="190" y1="230" x2="232" y2="230" stroke="#1b3b3f" stroke-width="6" stroke-linecap="round"/>
+    <text x="246" y="235" class="legend">完全匹配</text>
+    <line x1="190" y1="260" x2="232" y2="260" stroke="#3f7f91" stroke-width="4" stroke-dasharray="10 7"/>
+    <text x="246" y="265" class="legend">字元準確率</text>
+    <line x1="190" y1="290" x2="232" y2="290" stroke="#9b5f30" stroke-width="4" stroke-dasharray="3 7" stroke-linecap="round"/>
+    <text x="246" y="295" class="legend">5 字元輸出率</text>
+  </g>
+
+  <text x="74" y="750" class="small">註：native 表示 ddddocr 的貪婪解碼器；Beam 表示限制為 5 碼、A-Z/0-9 的自訂 CTC Beam Search。資料：300 張已標註保留驗證碼。</text>
+</svg>
