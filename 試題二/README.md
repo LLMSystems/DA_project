@@ -120,7 +120,7 @@ FastAPI 自動產生的 Swagger UI。
 | `notify.log` | 異常通知：查無資料（`empty_result`）、DB 不可用（`db_unavailable`） |
 | `app.log` | 服務啟動等一般訊息 |
 
-通知目前為最小實作（寫入 `notify.log` + stdout 告警）。介面 `Notifier.notify(event, message, **context)` 設計為可插拔，**試題三可替換為實際通知管道（webhook / Slack / email…）而不需改動 API 邏輯**。
+通知目前為（寫入 `notify.log` + stdout 告警）。介面 `Notifier.notify(event, message, **context)` 設計為可插拔，**試題三可替換為實際通知管道（webhook / Slack / email…）而不需改動 API 邏輯**。
 
 ## 測試
 

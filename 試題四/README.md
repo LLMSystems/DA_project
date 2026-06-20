@@ -9,7 +9,7 @@
 - [3. 端到端資料流](#3-端到端資料流)
 - [4. 爬蟲內部流程（試題一）](#4-爬蟲內部流程試題一)
 - [5. 異常通報流程（試題三）](#5-異常通報流程試題三)
-- [6. 自動化排程（加分題）](#6-自動化排程加分題)
+- [6. 自動化排程（額外）](#6-自動化排程加分題)
 - [7. 資料模型](#7-資料模型)
 - [8. 技術棧與元件對照](#8-技術棧與元件對照)
 - [9. 設計取捨](#9-設計取捨)
@@ -78,54 +78,73 @@ flowchart LR
 **named volumes（共用資料）** 與 **Compose 內網（HTTP）** 耦合，無直接程式相依。
 
 ```mermaid
-flowchart TB
+flowchart LR
     subgraph HOST["Docker Host（建議 Linux）"]
         direction TB
 
-        subgraph NET["compose 內網 doorplate_default"]
-            direction TB
-            crawler["crawler<br/><i>doorplate-crawler:latest</i><br/>一次性工作"]
-            api["api :8000<br/><i>FastAPI / uvicorn</i>"]
-            promtail["promtail :9080"]
-            loki["loki :3100"]
-            grafana["grafana :3000"]
-            sink["notifier-sink :9000"]
-            scheduler["scheduler<br/><i>mcuadros/ofelia</i>"]
+        subgraph NET["Compose 內網 doorplate_default"]
+            direction LR
+
+            subgraph APP["業務 / 排程"]
+                direction TB
+                crawler["crawler<br/><i>doorplate-crawler:latest</i><br/>一次性工作"]
+                api["api<br/><i>FastAPI / uvicorn</i><br/>:8000"]
+                scheduler["scheduler<br/><i>mcuadros/ofelia</i>"]
+            end
+
+            subgraph OBS["監控 / 通報"]
+                direction TB
+                promtail["promtail<br/>:9080"]
+                loki["loki<br/>:3100"]
+                grafana["grafana<br/>:3000"]
+                sink["notifier-sink<br/>:9000"]
+            end
         end
 
-        subgraph VOLS["named volumes"]
-            vdata[("doorplate-data<br/>/data")]
-            vlogs[("doorplate-logs<br/>/logs")]
-            vloki[("loki-data")]
-            vgraf[("grafana-data")]
-            vsink[("sink-data")]
-        end
+        subgraph RES["共享資源"]
+            direction LR
 
-        sock{{"/var/run/docker.sock"}}
+            subgraph VOLS["Named Volumes"]
+                direction TB
+                vdata[("doorplate-data<br/>/data")]
+                vlogs[("doorplate-logs<br/>/logs")]
+                vloki[("loki-data")]
+                vgraf[("grafana-data")]
+                vsink[("sink-data")]
+            end
+
+            sock{{"/var/run/docker.sock"}}
+        end
     end
 
-    PORTS(["Host ports<br/>3000 / 8000 / 9000 / 3100"])
+    subgraph PUB["Host 對外暴露 Port"]
+        direction LR
+        p3000["Grafana :3000"]
+        p8000["API :8000"]
+        p9000["Notifier :9000"]
+        p3100["Loki :3100（可選）"]
+    end
 
-    crawler --- vdata
-    crawler --- vlogs
-    api --- vdata
-    api --- vlogs
-    promtail --- vlogs
-    loki --- vloki
-    grafana --- vgraf
-    sink --- vsink
+    crawler <-->|讀寫| vdata
+    crawler -->|寫 log| vlogs
+    api -->|唯讀| vdata
+    api -->|寫 log| vlogs
+    promtail -->|tail| vlogs
+    loki -->|儲存| vloki
+    grafana -->|儀表板 / 狀態| vgraf
+    sink -->|通知落地| vsink
 
     promtail -->|push| loki
-    grafana -->|query| loki
+    grafana -->|query / alert| loki
     grafana -->|webhook| sink
 
-    scheduler -.->|spawn 容器| sock
+    scheduler -.->|spawn crawler 容器| sock
     promtail -.->|讀 scheduler stdout| sock
 
-    api --> PORTS
-    grafana --> PORTS
-    sink --> PORTS
-    loki --> PORTS
+    api --> p8000
+    grafana --> p3000
+    sink --> p9000
+    loki --> p3100
 
     classDef oneshot stroke-dasharray:4 3;
     class crawler oneshot;
@@ -263,7 +282,7 @@ flowchart LR
 
 ---
 
-## 6. 自動化排程（加分題）
+## 6. 自動化排程（額外）
 
 Ofelia 以 Docker 原生方式排程，無需宿主機 cron。排程結果同樣寫入共用 volume，
 因此**排程跑的資料一樣進監控、失敗一樣告警**，與手動執行共用同一條維運鏈路。

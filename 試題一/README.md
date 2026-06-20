@@ -1,6 +1,6 @@
 # 試題一
 
-本資料夾為 `interview_assignment.pdf` 的試題一實作。
+本資料夾為試題一實作。
 
 目前內容包含：
 
@@ -24,8 +24,6 @@
   - 但 **Chrome 本體必須已安裝**，否則啟動會失敗。
 
 ## 安裝
-
-建議先建立並啟用虛擬環境（名稱自訂），再安裝依賴：
 
 ```powershell
 pip install -r .\試題一\requirements.txt
@@ -103,8 +101,6 @@ python .\main.py --captcha auto --areas 大安區
 
 目前保留 `--captcha-variants 1 --captcha-decoder native` 作為預設，確保 `--captcha auto` 的原本速度與行為不變；需要兼顧速度與辨識率時建議使用 `--captcha-variants 6`，在三批 holdout 合併後由 Otsu 的 72.3% 提升到 76.3%，且耗時仍約 73ms/張。若更重視準確率，可使用 `--captcha-variants 18 --captcha-decoder beam`，三批 holdout 合併後達 85.0%，評測約 305ms/張。
 
-曾測試 beam variants 剪枝：前兩批 holdout 找到的 `drop6` 在第三批由 85% 降到 84%，未通過新 holdout 驗證，因此正式建議仍保留完整 `18 variants + beam`。
-
 搭配「5 碼閘門 + 重試（每次換新驗證碼）」：以合併 holdout 的單次成功率估算，Otsu 約 72.3%、variants=6 約 76.3%、variants=18 native 約 78.3%、variants=18 beam 約 85.0%。累積成功率 = 1 − (1 − p)ⁿ；`auto_captcha_attempts=6` 時，Otsu 約 99.95%、variants=6 約 99.98%、variants=18 beam 約 99.999%，用盡仍失敗才降級人工。
 
 > 評測與資料蒐集腳本見 [scripts/](scripts/)：`collect_captchas.py`（蒐集樣本）、`label_captchas.py`（產生標註頁）、`eval_captcha.py`（ddddocr 預測報告）、`eval_cv.py`（比較各種 CV 前處理）、`eval_variant_selector.py`（比較 variants selector 策略）、`eval_beam_ablation.py`（beam variants 剪枝實驗）。這些腳本與其產物僅供評測，不影響主流程。
@@ -132,18 +128,7 @@ python .\main.py --captcha auto --areas 大安區
 ## 資料落地說明
 
 - 採**逐區即時寫入資料庫**（`INSERT OR IGNORE`，以 `row_hash` 去重，可重複執行不產生重複資料）。
-- CSV 於整體流程結束時一次彙整輸出（`utf-8-sig` 編碼，方便 Excel 開啟）。
-
-## 初步驗證
-
-提供 `scripts/check_output.py` 比對單次執行的 CSV 與 SQLite 是否一致、有無重複：
-
-```powershell
-cd .\試題一
-python scripts\check_output.py --csv data\verify\c1.csv --db data\verify\c1.sqlite3
-```
-
-輸出會列出 CSV／DB 筆數、各行政區筆數，以及一致性檢查（`duplicate rows in CSV`、CSV 與 DB 的 `row_hash` 差集），最後給出 `PASS` / `FAIL`。
+- CSV 於整體流程結束時一次彙整輸出（。
 
 ### 抽查結果
 
@@ -173,12 +158,6 @@ cd .\試題一
 python .\main.py --city 台中市
 ```
 
-題目要求使用台北市時，可直接使用預設值，或明確指定：
-
-```powershell
-cd .\試題一
-python .\main.py --city 臺北市 --areas 大安區
-```
 ## 進階 OCR variants
 
 `--captcha auto` 預設仍使用原本的單一 Otsu 流程。若要用較多 CPU 時間換取較高辨識率，可加上 `--captcha-variants`：

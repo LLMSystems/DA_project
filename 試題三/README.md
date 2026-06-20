@@ -92,7 +92,7 @@ docker compose up --build
 - API：查無資料、DB 不可用皆寫入結構化 log 並由平台通報。
 - 網站變更：解析失敗會丟出例外並記 ERROR，透過告警即時得知。
 
-## [加分題] 自動化排程
+## [額外] 自動化排程
 
 已用 **Ofelia**（Docker 原生排程器）實作，隨 compose 一起啟動，無需宿主機 cron。
 
