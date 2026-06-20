@@ -70,12 +70,19 @@ uvicorn app.main:app --port 8000
 | LOG 與通報紀錄 | [docs/README.md](docs/README.md#試題三-log-與通報) |
 | 系統架構圖 | [試題四](試題四/) |
 | 排程設計 | [試題三 — 自動化排程](試題三/README.md#加分題-自動化排程) |
+| 自動驗證碼 ocr 優化 | [試題一 — OCR 優化報告](試題一/OCR_優化報告.md) |
 
 ## 設計重點
 
 - **共用資料層解耦**：爬蟲寫、API 唯讀同一份 SQLite；所有服務寫同一份 Log，靠 named volume 串接，無直接程式相依。
 - **驗證碼自動辨識**：ddddocr + Otsu 前處理 + 5 碼閘門 + 失敗自動重試/降級人工；進階可開多變體與 beam CTC 解碼（3次重試可達 99% 成功率，詳見[OCR 優化報告](試題一/OCR_優化報告.md)）。
 - **平台偵測為主的異常通報**：應用只負責寫結構化 Log，由 Grafana 以 LogQL 統一偵測。
+
+### 自動驗證碼 OCR 優化
+
+
+
+![Captcha OCR optimization journey](試題一/docs/captcha_ocr_optimization_journey.svg)
 
 ## 環境需求
 
