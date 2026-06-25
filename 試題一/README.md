@@ -57,6 +57,9 @@ python .\main.py --areas 大安區
 - `--log-path logs/crawler.log`
 - `--captcha manual|auto`（驗證碼處理；預設 `manual`。`auto` 見下方「驗證碼自動辨識」）
 - `--headless`（headless 模式；驗證碼處理方式見下方說明）
+- `--min-delay 1.5` / `--max-delay 4.0`（每區查詢送出前的隨機等待秒數範圍，反爬節流；設 `0 0` 關閉，見下方「反爬節流與指紋」）
+- `--user-agent "..."`（自訂 User-Agent；留空則沿用瀏覽器 UA 並自動移除 Headless 標記）
+- `--no-stealth`（關閉反自動化指紋遮蔽）
 
 ## 驗證碼輸入方式
 
@@ -104,6 +107,26 @@ python .\main.py --captcha auto --areas 大安區
 搭配「5 碼閘門 + 重試（每次換新驗證碼）」：以合併 holdout 的單次成功率估算，Otsu 約 72.3%、variants=6 約 76.3%、variants=18 native 約 78.3%、variants=18 beam 約 85.0%。累積成功率 = 1 − (1 − p)ⁿ；`auto_captcha_attempts=6` 時，Otsu 約 99.95%、variants=6 約 99.98%、variants=18 beam 約 99.999%，用盡仍失敗才降級人工。
 
 > 評測與資料蒐集腳本見 [scripts/](scripts/)：`collect_captchas.py`（蒐集樣本）、`label_captchas.py`（產生標註頁）、`eval_captcha.py`（ddddocr 預測報告）、`eval_cv.py`（比較各種 CV 前處理）、`eval_variant_selector.py`（比較 variants selector 策略）、`eval_beam_ablation.py`（beam variants 剪枝實驗）。這些腳本與其產物僅供評測，不影響主流程。
+
+## 反爬節流與指紋
+
+為降低**頻繁爬取被擋**的風險，預設啟用兩組機制（demo 想最快可關閉）：
+
+**節流與退避（請求節奏）**
+
+- **每區隨機等待**：每個行政區查詢送出前隨機等待 `--min-delay ~ --max-delay` 秒（預設 1.5–4s），打散規律的請求節奏。設 `--min-delay 0 --max-delay 0` 關閉。
+- **驗證碼錯誤退避**：站方判定驗證碼錯誤時，採指數退避加抖動（`min(base·2^(n-1), 8s)`）再重試，避免疑似限流時還連續猛打。
+
+> 註：結果分頁是**前端翻頁**（DataTable，不再打伺服器），故伺服器壓力來自「區數 × 驗證碼次數」而非資料筆數；提高 OCR 單次辨識率（`--captcha-variants` / `--captcha-decoder beam`）可減少驗證碼重抽，對站方更友善。
+
+**指紋遮蔽（`--no-stealth` 關閉）**
+
+- **User-Agent**：移除 headless 的 `HeadlessChrome` 標記（改回一般 `Chrome`）；可用 `--user-agent` 完全自訂。
+- **`navigator.webdriver`**：以 CDP 注入遮成 `undefined`。
+- **自動化特徵**：關閉「Chrome 正受自動化控制」橫幅（`--disable-blink-features=AutomationControlled` 等）。
+- **視窗尺寸**：每次啟動加入抖動，避免固定解析度成為指紋。
+
+> 整套 Docker demo 中，一次性 `crawler` 預設關閉節流以維持 demo 速度；定期全量爬的排程器（Ofelia）刻意保留節流，貼近真實「頻繁爬」情境。詳見 [試題三 docker-compose.yml](../試題三/docker-compose.yml) 與 [ofelia/config.ini](../試題三/ofelia/config.ini)。
 
 ## 輸出
 

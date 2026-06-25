@@ -1,0 +1,7 @@
+# 本機覆寫：Windows/WSL2 保留了 TCP 8904-9003（含 9000），notifier-sink 無法綁 9000。
+# 改用主機 9009 對應容器內 9000。Grafana webhook 走容器內網路（notifier-sink:9000），不受影響。
+# 瀏覽器改開 http://localhost:9009。
+services:
+  notifier-sink:
+    ports: !override
+      - "9009:9000"

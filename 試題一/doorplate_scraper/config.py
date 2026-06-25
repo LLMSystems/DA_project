@@ -85,6 +85,20 @@ class CrawlerConfig:
     csv_path: Path = field(default_factory=lambda: Path("data") / "doorplate_records.csv")
     log_path: Path = field(default_factory=lambda: Path("logs") / "crawler.log")
     areas: list[str] = field(default_factory=list)
+    # === 反爬：請求節流與退避（A 組）===
+    # 每個行政區查詢送出前的隨機等待秒數範圍，模擬人為節奏、打散規律請求指紋。
+    # 設為 0/0 可關閉（例如測試或想最快跑完時）。
+    request_delay_min: float = 1.5
+    request_delay_max: float = 4.0
+    # 驗證碼被站方判定錯誤後的指數退避：min(base * 2**(n-1), backoff_max)，再加抖動。
+    # 避免被暫時限流時還猛打，加速被封。base<=0 可關閉。
+    retry_backoff_base: float = 1.0
+    retry_backoff_max: float = 8.0
+    # === 反爬：指紋遮蔽（B 組）===
+    # 移除 headless 的 UA 標記、遮蔽 navigator.webdriver 與自動化橫幅。
+    stealth: bool = True
+    # 自訂 User-Agent；留空則沿用實際瀏覽器 UA 並自動移除 Headless 標記。
+    user_agent: str = ""
 
     def with_area_names(self, areas: Iterable[str]) -> None:
         self.areas = [area.strip() for area in areas if area.strip()]

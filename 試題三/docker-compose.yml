@@ -17,9 +17,12 @@ services:
       - doorplate-data:/data
       - doorplate-logs:/logs
     # 預設限定兩區以加速 demo；要抓台北市全部行政區，移除 --areas 即可。
+    # demo 用一次性爬取：關閉反爬節流（--min-delay/--max-delay 0）以維持最快速度，
+    # stealth 指紋遮蔽維持預設開啟（幾乎零成本）。定期全量爬的節流見 ofelia/config.ini。
     command: >
       python main.py --captcha auto --headless
       --areas 大安區,中正區
+      --min-delay 0 --max-delay 0
       --db-path /data/doorplate.sqlite3
       --log-path /logs/crawler/crawler.log
 

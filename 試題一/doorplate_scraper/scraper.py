@@ -4,6 +4,7 @@ import base64
 import logging
 import math
 import os
+import random
 import subprocess
 import sys
 import time
@@ -104,8 +105,17 @@ class DoorplateScraper:
         # 容器內必要旗標：關閉 sandbox、避免 /dev/shm 過小導致 Chrome 崩潰。
         options.add_argument("--no-sandbox")
         options.add_argument("--disable-dev-shm-usage")
-        options.add_argument("--window-size=1600,1400")
+        # 視窗尺寸加入抖動：固定解析度本身是行為指紋，每次微調較不規律。
+        width, height = random.randint(1500, 1680), random.randint(1300, 1460)
+        options.add_argument(f"--window-size={width},{height}")
         options.add_argument("--lang=zh-TW")
+        if self.config.stealth:
+            # 關閉「Chrome 正受自動化控制」橫幅與 AutomationControlled 特徵。
+            options.add_argument("--disable-blink-features=AutomationControlled")
+            options.add_experimental_option("excludeSwitches", ["enable-automation"])
+            options.add_experimental_option("useAutomationExtension", False)
+        if self.config.user_agent:
+            options.add_argument(f"--user-agent={self.config.user_agent}")
         # 容器化時以環境變數指定 chromium / chromedriver 路徑（本機不設則維持原行為，
         # 由 Selenium Manager 自動處理）。
         chrome_binary = os.getenv("CHROME_BINARY")
@@ -115,8 +125,52 @@ class DoorplateScraper:
         if chromedriver:
             from selenium.webdriver.chrome.service import Service
 
-            return webdriver.Chrome(options=options, service=Service(executable_path=chromedriver))
-        return webdriver.Chrome(options=options)
+            driver = webdriver.Chrome(options=options, service=Service(executable_path=chromedriver))
+        else:
+            driver = webdriver.Chrome(options=options)
+        if self.config.stealth:
+            self._apply_stealth(driver)
+        return driver
+
+    def _apply_stealth(self, driver: WebDriver) -> None:
+        """降低 headless/自動化指紋：清掉 UA 的 Headless 標記、遮蔽 navigator.webdriver。
+
+        以 CDP 在每個新文件載入前注入，故須在首次 driver.get 之前套用（建構時即呼叫）。
+        指紋遮蔽屬盡力而為，任一步失敗都只記錄、不影響爬取主流程。
+        """
+        try:
+            # 未自訂 UA 時，取實際瀏覽器 UA 並移除 HeadlessChrome 標記後覆寫。
+            if not self.config.user_agent:
+                ua = driver.execute_script("return navigator.userAgent") or ""
+                if "Headless" in ua:
+                    clean_ua = ua.replace("HeadlessChrome", "Chrome")
+                    driver.execute_cdp_cmd("Network.setUserAgentOverride", {"userAgent": clean_ua})
+                    self.logger.info("UA 去除 Headless 標記：%s", clean_ua)
+            driver.execute_cdp_cmd(
+                "Page.addScriptToEvaluateOnNewDocument",
+                {"source": "Object.defineProperty(navigator, 'webdriver', {get: () => undefined});"},
+            )
+        except Exception:  # noqa: BLE001 - 指紋遮蔽失敗不應中斷爬取
+            self.logger.warning("套用 stealth 指紋遮蔽失敗，改用瀏覽器預設", exc_info=True)
+
+    def _human_pause(self, reason: str) -> None:
+        """請求前的隨機等待，模擬人為節奏、打散規律請求指紋。"""
+        lo, hi = self.config.request_delay_min, self.config.request_delay_max
+        if hi <= 0 or hi < lo:
+            return
+        delay = random.uniform(lo, hi)
+        self.logger.info("節流等待 %.2fs（%s）", delay, reason)
+        time.sleep(delay)
+
+    def _backoff_after_captcha_error(self, error_count: int, area_name: str) -> None:
+        """驗證碼被站方判定錯誤後的指數退避（加抖動），避免疑似限流時還猛打。"""
+        base, cap = self.config.retry_backoff_base, self.config.retry_backoff_max
+        if base <= 0:
+            return
+        ceiling = min(base * (2 ** (error_count - 1)), cap)
+        delay = random.uniform(ceiling * 0.5, ceiling)
+        self.logger.info("驗證碼錯誤退避 %.2fs（%s 第 %s 次）", delay, area_name, error_count)
+        time.sleep(delay)
 
     def _required_driver(self) -> WebDriver:
         if self.driver is None:
@@ -177,6 +231,8 @@ class DoorplateScraper:
         max_captcha_attempts: int = 5,
     ) -> list[DoorplateRecord]:
         driver = self._required_driver()
+        # 每區查詢送出前隨機等待，讓區與區之間的節奏不規律（反爬節流）。
+        self._human_pause(f"查詢 {area_name} 前")
         self._fill_query_form(
             area_code=area_code,
             start_date=start_date,
@@ -187,6 +243,7 @@ class DoorplateScraper:
         # auto 模式：先給 OCR 一定次數嘗試，用盡仍失敗才降級人工。
         auto_budget = self.config.auto_captcha_attempts if self._captcha_mode == "auto" else 0
         total_attempts = auto_budget + max_captcha_attempts
+        captcha_error_count = 0
 
         for attempt in range(1, total_attempts + 1):
             use_ocr = self._captcha_mode == "auto" and attempt <= auto_budget
@@ -239,8 +296,11 @@ class DoorplateScraper:
             driver.find_element(By.ID, "main-query").click()
             state = self._wait_for_query_outcome()
             if state.kind == "captcha_error":
+                captcha_error_count += 1
                 self.logger.warning("Captcha validation failed for %s, retrying", area_name)
                 self._dismiss_modal()
+                # 站方判定驗證碼錯誤後退避，避免疑似限流時連續猛打。
+                self._backoff_after_captcha_error(captcha_error_count, area_name)
                 self._last_captcha_signature = self._wait_for_captcha_ready(
                     previous_signature=captcha_signature
                 )
