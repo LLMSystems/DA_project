@@ -20,7 +20,7 @@
 
 - **Python 3.10+**
 - **Google Chrome 瀏覽器**：爬蟲以 Selenium driving Chrome。
-  - 不需手動安裝 ChromeDriver；Selenium 4 內建的 Selenium Manager 會自動下載與你 Chrome 版本相符的 driver。
+  - 不需手動安裝 ChromeDriver；Selenium 4 內建的 Selenium Manager 會自動下載與 Chrome 版本相符的 driver。
   - 但 **Chrome 本體必須已安裝**，否則啟動會失敗。
 
 ## 安裝
@@ -38,7 +38,7 @@ python -m pytest
 
 ## 執行爬蟲
 
-建議先用有視窗模式，方便人工輸入驗證碼：
+建議先用有視窗模式，方便人工輸入驗證碼(也可使用ocr辨識，見下面「驗證碼自動辨識」)：
 
 ```powershell
 cd .\試題一
@@ -63,7 +63,7 @@ python .\main.py --areas 大安區
 
 ## 驗證碼自動辨識（`--captcha auto`）
 
-加上 `--captcha auto` 可改用 **ddddocr 自動辨識**驗證碼，無需人工：
+加上 `--captcha auto` 可使用 **ddddocr 自動辨識**驗證碼，無需人工：
 
 ```powershell
 cd .\試題一
@@ -71,9 +71,9 @@ python .\main.py --captcha auto --areas 大安區
 ```
 
 - **相依**：需 `pip install ddddocr opencv-python`（已列入 `requirements.txt`；`manual` 模式可不裝）。
-  - Windows 上 ddddocr 依賴的 `onnxruntime` 需要**較新的 Microsoft Visual C++ Redistributable（x64）**，否則 `import onnxruntime` 會出現「DLL 初始化失敗」。請安裝[最新版 VC++ Redistributable](https://aka.ms/vs/17/release/vc_redist.x64.exe)。
+  - Windows 上 ddddocr 依賴的 `onnxruntime` 需要**較新的 Microsoft Visual C++ Redistributable（x64）**，否則 `import onnxruntime` 會出現「DLL 初始化失敗」。
 - **前處理**：取驗證碼圖後做**灰階 → Otsu 二值化**再丟給 ddddocr（實測對本站雜訊底圖提升最顯著）。
-- **5 碼閘門**：本站驗證碼固定 5 碼，辨識結果若非 5 碼視為不可信，**直接換一張重抽、不送出**（不浪費伺服器請求）。
+- **5 碼閘門**：本站驗證碼固定 5 碼，辨識結果若非 5 碼視為不可信，**直接換一張重抽、不送出**。
 - **自動降級**：`auto` 先讓 OCR 嘗試數次（預設 6 次），仍失敗才**自動降級為人工輸入**（沿用下節「驗證碼輸入方式」的視窗／截圖方式），確保最終仍可完成。
 - **CPU 即可**：單張辨識約 10ms 級，不需要 GPU。
 
@@ -106,27 +106,25 @@ python .\main.py --captcha auto --areas 大安區
 
 驗證碼輸入錯誤時會自動重新產製並再次提示，最多重試 5 次。
 
-> 進階：建構 `DoorplateScraper` 時可注入自訂 `captcha_provider`，即可改為其他辨識方案。
-
 ## 反爬節流與指紋
 
-為降低**頻繁爬取被擋**的風險，預設啟用兩組機制（demo 想最快可關閉）：
+為降低**頻繁爬取被擋**的風險，預設啟用兩組機制
 
-**節流與退避（請求節奏）**
+**節流與退避**
 
 - **每區隨機等待**：每個行政區查詢送出前隨機等待 `--min-delay ~ --max-delay` 秒（預設 1.5–4s），打散規律的請求節奏。設 `--min-delay 0 --max-delay 0` 關閉。
-- **驗證碼錯誤退避**：站方判定驗證碼錯誤時，採指數退避加抖動（`min(base·2^(n-1), 8s)`）再重試，避免疑似限流時還連續猛打。
+- **驗證碼錯誤退避**：站方判定驗證碼錯誤時，採指數退避加抖動（`min(base·2^(n-1), 8s)`）再重試，避免疑似限流時還連續打。
 
 > 註：結果分頁是**前端翻頁**（DataTable，不再打伺服器），故伺服器壓力來自「區數 × 驗證碼次數」而非資料筆數；提高 OCR 單次辨識率（`--captcha-variants` / `--captcha-decoder beam`）可減少驗證碼重抽，對站方更友善。
 
 **指紋遮蔽（`--no-stealth` 關閉）**
 
-- **User-Agent**：移除 headless 的 `HeadlessChrome` 標記（改回一般 `Chrome`）；可用 `--user-agent` 完全自訂。
+- **User-Agent**：移除 headless 的 `HeadlessChrome` 標記（改回一般 `Chrome`）；可用 `--user-agent` 自訂。
 - **`navigator.webdriver`**：以 CDP 注入遮成 `undefined`。
 - **自動化特徵**：關閉「Chrome 正受自動化控制」橫幅（`--disable-blink-features=AutomationControlled` 等）。
 - **視窗尺寸**：每次啟動加入抖動，避免固定解析度成為指紋。
 
-> 整套 Docker demo 中，一次性 `crawler` 預設關閉節流以維持 demo 速度；定期全量爬的排程器（Ofelia）刻意保留節流，貼近真實「頻繁爬」情境。詳見 [試題三 docker-compose.yml](../試題三/docker-compose.yml) 與 [ofelia/config.ini](../試題三/ofelia/config.ini)。
+> 整套 Docker demo 中，一次性 `crawler` 預設關閉節流以維持 demo 速度；定期全量爬的排程器保留節流，貼近真實「頻繁爬」情境。詳見 [試題三 docker-compose.yml](../試題三/docker-compose.yml) 與 [ofelia/config.ini](../試題三/ofelia/config.ini)。
 
 ## 輸出
 

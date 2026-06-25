@@ -102,7 +102,7 @@ class DoorplateScraper:
         if self.config.headless:
             options.add_argument("--headless=new")
         options.add_argument("--disable-gpu")
-        # 容器內必要旗標：關閉 sandbox、避免 /dev/shm 過小導致 Chrome 崩潰。
+        # 容器內必要flag：關閉 sandbox、避免 /dev/shm 過小導致 Chrome 崩潰。
         options.add_argument("--no-sandbox")
         options.add_argument("--disable-dev-shm-usage")
         # 視窗尺寸加入抖動：固定解析度本身是行為指紋，每次微調較不規律。
@@ -722,7 +722,7 @@ class DoorplateScraper:
         _ = driver
         if self._ocr is None:
             try:
-                import ddddocr  # 延後載入：僅 auto 模式需要
+                import ddddocr  # 僅 auto 模式需要
             except ImportError as exc:
                 raise CrawlerError(
                     "auto 模式需安裝 ddddocr 與 opencv-python：pip install ddddocr opencv-python"

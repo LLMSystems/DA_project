@@ -44,7 +44,7 @@ docker compose up --build
 | Grafana | <http://localhost:3000> | 看 log 與告警（匿名登入，已開 Admin） |
 | API (試題二) | <http://localhost:8000/docs> | 查詢 API |
 | notifier-sink | <http://localhost:9000> | 通報紀錄查詢 |
-| Loki | <http://localhost:3100> | log 儲存（一般不直接開） |
+| Loki | <http://localhost:3100> | log 儲存（不對外開） |
 
 > `crawler` 為一次性工作，預設僅抓 `大安區,中正區` 以加速 demo；要抓**台北市全部行政區**，
 > 移除 compose 中 crawler 的 `--areas` 參數再 `docker compose up crawler` 即可。
@@ -94,7 +94,7 @@ docker compose up --build
 
 ## [額外] 自動化排程
 
-已用 **Ofelia**（Docker 原生排程器）實作，隨 compose 一起啟動，無需宿主機 cron。
+採用 **Ofelia**（Docker 原生排程器）實作，隨 compose 一起啟動，無需宿主機 cron。
 
 - 服務：`scheduler`（`mcuadros/ofelia`），設定見 [`ofelia/config.ini`](ofelia/config.ini)。
 - 行為：依排程**起一個新的 `doorplate-crawler` 容器**跑全量抓取，跑完即刪除（`delete = true`）。
@@ -112,7 +112,7 @@ docker compose up --build
 | 路徑 | 說明 |
 |------|------|
 | `docker-compose.yml` | 服務編排與容器關聯 |
-| `ofelia/config.ini` | [加分題] 自動化排程設定（Ofelia） |
+| `ofelia/config.ini` | [額外題] 自動化排程設定（Ofelia） |
 | `loki/loki-config.yml` | Loki 單體 + 檔案系統儲存、保留 7 天 |
 | `promtail/promtail-config.yml` | 收集爬蟲（文字）與 API（JSON）兩種 log |
 | `grafana/provisioning/datasources/` | Loki 資料源 |

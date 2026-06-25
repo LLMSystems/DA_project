@@ -46,14 +46,14 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--db-path", default=str(Path("data") / "doorplate.sqlite3"))
     parser.add_argument("--csv-path", default=str(Path("data") / "doorplate_records.csv"))
     parser.add_argument("--log-path", default=str(Path("logs") / "crawler.log"))
-    # 反爬節流（A 組）
+    # 反爬節流
     parser.add_argument(
         "--min-delay", type=float, default=1.5, help="每區查詢送出前最小隨機等待秒數（反爬節流，0 可關閉）"
     )
     parser.add_argument(
         "--max-delay", type=float, default=4.0, help="每區查詢送出前最大隨機等待秒數"
     )
-    # 反爬指紋遮蔽（B 組）
+    # 反爬指紋遮蔽
     parser.add_argument(
         "--user-agent", default="", help="自訂 User-Agent；留空則用瀏覽器 UA 並自動移除 Headless 標記"
     )
