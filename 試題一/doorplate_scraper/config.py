@@ -41,9 +41,6 @@ CITY_NAME_TO_CODE = {
     "連江縣": "09007000",
 }
 REGISTER_KIND_INITIAL = "1"
-# 結果表格固定每頁 50 筆（網站預設值），僅用於估算頁數。
-# 不另外調整每頁筆數：此站「改每頁筆數」會重新向伺服器查詢並重送已被
-# 消耗的單次驗證碼，造成「圖形驗證碼驗證失敗」；改以前端翻頁擷取最穩定。
 RESULT_PAGE_SIZE = 50
 
 
@@ -85,7 +82,7 @@ class CrawlerConfig:
     csv_path: Path = field(default_factory=lambda: Path("data") / "doorplate_records.csv")
     log_path: Path = field(default_factory=lambda: Path("logs") / "crawler.log")
     areas: list[str] = field(default_factory=list)
-    # === 反爬：請求節流與退避（A 組）===
+    # === 反爬：請求節流與退避===
     # 每個行政區查詢送出前的隨機等待秒數範圍，模擬人為節奏、打散規律請求指紋。
     # 設為 0/0 可關閉（例如測試或想最快跑完時）。
     request_delay_min: float = 1.5
@@ -94,7 +91,7 @@ class CrawlerConfig:
     # 避免被暫時限流時還猛打，加速被封。base<=0 可關閉。
     retry_backoff_base: float = 1.0
     retry_backoff_max: float = 8.0
-    # === 反爬：指紋遮蔽（B 組）===
+    # === 反爬：指紋遮蔽===
     # 移除 headless 的 UA 標記、遮蔽 navigator.webdriver 與自動化橫幅。
     stealth: bool = True
     # 自訂 User-Agent；留空則沿用實際瀏覽器 UA 並自動移除 Headless 標記。
