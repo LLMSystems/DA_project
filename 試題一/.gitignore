@@ -12,12 +12,11 @@ temp
 # 驗證碼截圖暫存（headless 模式產生）
 logs/captcha/
 
-# 驗證碼樣本蒐集／holdout（測試辨識用，不進版控）
-data/captcha_samples/
+# 驗證碼 OCR 評測資料集（人工標註）：作為 OCR 優化報告的評測證據，納入版控。
+#   data/captcha_samples、data/captcha_holdout_100、
+#   data/captcha_holdout_extra_100、data/captcha_holdout_extra2_100（各 100 張 + labels.csv）
+# 僅排除未標註的臨時蒐集樣本。
 data/captcha_samples2/
-data/captcha_holdout_100/
-data/captcha_holdout_extra_100/
-data/captcha_holdout_extra2_100/
 
 # auto 模式臨時測試產物
 data/auto_test.*

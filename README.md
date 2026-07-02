@@ -67,6 +67,7 @@ uvicorn app.main:app --port 8000
 | 系統架構圖 | [試題四](試題四/) |
 | 排程設計 | [試題三 — 自動化排程](試題三/README.md#加分題-自動化排程) |
 | 自動驗證碼 ocr 優化 | [試題一 — OCR 優化報告](試題一/OCR_優化報告.md) |
+| OCR 評測資料集（人工標註驗證圖片） | [captcha_samples](試題一/data/captcha_samples/)、[holdout_100](試題一/data/captcha_holdout_100/)、[holdout_extra_100](試題一/data/captcha_holdout_extra_100/)、[holdout_extra2_100](試題一/data/captcha_holdout_extra2_100/)（各 100 張 + `labels.csv`） |
 
 ## 設計重點
 
